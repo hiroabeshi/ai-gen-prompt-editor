@@ -45,8 +45,9 @@
         <div class="guide-tips">
           <h3 class="guide-tips__title">💡 その他の便利な機能</h3>
           <ul class="guide-tips__list">
-            <li><strong>スロットの追加:</strong> 複数のスロットを作って、別々のプロンプト案を比較できます。<br>また、<strong>キャラクターに関しては、スロットを追加してプロンプトを分けることをお勧めします</strong>。</li>
-            <li><strong>自作パーツの登録:</strong> 画面左下のボタンから、よく使うお気に入りのタグを新しく登録できます。</li>
+            <li><strong>自作パーツの登録:</strong> 各カテゴリの「＋」ボタンから、お気に入りのタグを新規登録できます。</li>
+            <li><strong>スロットの追加:</strong> 「新しいスロットを追加」ボタンから、新しいスロットを作成できます。<br>
+            <strong>キャラクターに関しては、１スロット１キャラクターとすることをお勧めします</strong>。</li>
           </ul>
         </div>
 
@@ -56,10 +57,17 @@
             <dt><strong>🔒 プライバシーについて</strong></dt>
             <dd>
               当アプリはユーザーのプライバシーを最優先し、<br>
-              アクセス解析などのトラッキングを行いません。<br>
+              アクセス解析などのトラッキングは行いません。<br>
               各処理はローカルで処理され、データはJSONファイルでのみ保持されます。
             </dd>
           </dl>
+        </div>
+
+        <div class="guide-patch-notes">
+          <h3 class="guide-patch-notes__title">📝 パッチノート</h3>
+          <ul class="guide-patch-notes__list">
+            <li><strong>ver 0.1:</strong> リリース</li>
+          </ul>
         </div>
       </div>
       <div class="guide-modal__footer">
@@ -192,6 +200,46 @@ defineEmits<{ (e: 'close'): void }>()
 
 .guide-faq__list dd:last-child {
   margin-bottom: 0;
+}
+
+.guide-patch-notes {
+  margin-top: 32px;
+  padding: 16px;
+  background: #1f2937;
+  border-radius: 8px;
+  border: 1px solid #374151;
+}
+
+.guide-patch-notes__title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #60a5fa;
+  margin-bottom: 12px;
+}
+
+.guide-patch-notes__list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.guide-patch-notes__list li {
+  position: relative;
+  padding-left: 20px;
+  margin-bottom: 8px;
+  color: #d1d5db;
+  font-size: 0.9rem;
+}
+
+.guide-patch-notes__list li:last-child {
+  margin-bottom: 0;
+}
+
+.guide-patch-notes__list li::before {
+  content: "-";
+  position: absolute;
+  left: 4px;
+  color: #9ca3af;
 }
 
 .guide-step {
