@@ -49,6 +49,18 @@
             <li><strong>自作パーツの登録:</strong> 画面左下のボタンから、よく使うお気に入りのタグを新しく登録できます。</li>
           </ul>
         </div>
+
+        <div class="guide-faq">
+          <h3 class="guide-faq__title">❓ よくある質問</h3>
+          <dl class="guide-faq__list">
+            <dt><strong>🔒 プライバシーについて</strong></dt>
+            <dd>
+              当アプリはユーザーのプライバシーを最優先し、<br>
+              アクセス解析などのトラッキングを行いません。<br>
+              各処理はローカルで処理され、データはJSONファイルでのみ保持されます。
+            </dd>
+          </dl>
+        </div>
       </div>
       <div class="guide-modal__footer">
         <button class="btn-primary" @click="$emit('close')">はじめる</button>
@@ -145,6 +157,41 @@ defineEmits<{ (e: 'close'): void }>()
   margin-bottom: 24px;
   font-size: 0.9rem;
   line-height: 1.5;
+}
+
+.guide-faq {
+  margin-top: 32px;
+  padding: 16px;
+  background: #1f2937;
+  border-radius: 8px;
+  border: 1px solid #374151;
+}
+
+.guide-faq__title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #10b981;
+  margin-bottom: 12px;
+}
+
+.guide-faq__list {
+  margin: 0;
+}
+
+.guide-faq__list dt {
+  margin-bottom: 4px;
+  color: #e5e7eb;
+}
+
+.guide-faq__list dd {
+  margin: 0 0 16px 0;
+  padding-left: 12px;
+  color: #9ca3af;
+  line-height: 1.6;
+}
+
+.guide-faq__list dd:last-child {
+  margin-bottom: 0;
 }
 
 .guide-step {

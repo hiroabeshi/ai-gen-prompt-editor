@@ -356,6 +356,7 @@ function clonePart(part: PromptPart) {
   display: flex;
   align-items: center;
   transition: background 0.15s, color 0.15s;
+  margin-right: 8px;
 }
 
 .category-add-btn:hover {
