@@ -1,0 +1,188 @@
+<template>
+  <!-- masterPart が存在しない場合は何も描画しない (D&D 中のライブラリクローン対策) -->
+  <div v-if="masterPart"
+    class="part-card"
+    :class="{
+      'part-card--disabled': !part.enabled,
+      'part-card--selected': isSelected,
+    }"
+    :style="{ borderLeftColor: categoryColor }"
+    @click="$emit('select')"
+  >
+    <!-- D&D ハンドル -->
+    <div class="drag-handle" title="ドラッグして並び替え">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M9 3h2v2H9zm4 0h2v2h-2zM9 7h2v2H9zm4 0h2v2h-2zM9 11h2v2H9zm4 0h2v2h-2zM9 15h2v2H9zm4 0h2v2h-2zM9 19h2v2H9zm4 0h2v2h-2z"/>
+      </svg>
+    </div>
+
+    <!-- チェックボックス (ON/OFF) -->
+    <input
+      type="checkbox"
+      class="part-checkbox"
+      :checked="part.enabled"
+      @change.stop="$emit('toggle')"
+      @click.stop
+      title="有効/無効の切り替え"
+    />
+
+    <!-- ラベル -->
+    <span class="part-label" :class="{ 'part-label--off': !part.enabled }">
+      {{ masterLabel }}
+    </span>
+
+    <!-- インライン強度調整スライダー -->
+    <input
+      v-if="isSelected"
+      type="range"
+      class="inline-slider"
+      :value="part.weight"
+      min="-2.5" max="5.0" step="0.1"
+      @input="onWeightInput"
+      @click.stop
+    />
+
+    <!-- weight バッジ -->
+    <span
+      v-if="part.weight !== 1.0 || isSelected"
+      class="weight-badge"
+      :class="{
+        'weight-badge--high': part.weight > 1.0,
+        'weight-badge--low': part.weight < 1.0,
+      }"
+    >
+      {{ displayWeight }}
+    </span>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { computed } from 'vue'
+import { usePromptStore } from '../store/promptStore'
+import type { SelectedPart } from '../types'
+
+const props = defineProps<{
+  part: SelectedPart
+  isSelected: boolean
+}>()
+
+const emit = defineEmits<{
+  select: []
+  toggle: []
+  'update-weight': [weight: number]
+}>()
+
+function onWeightInput(e: Event) {
+  const target = e.target as HTMLInputElement
+  emit('update-weight', parseFloat(target.value))
+}
+
+const store = usePromptStore()
+
+const masterPart = computed(() => store.getMasterPart(props.part.partId))
+const masterLabel = computed(() => masterPart.value?.label ?? '不明なパーツ')
+
+const categoryColor = computed(() => {
+  if (!masterPart.value) return '#6b7280'
+  const cat = store.categories.find(c => c.id === masterPart.value!.categoryId)
+  return cat?.color ?? '#6b7280'
+})
+
+const displayWeight = computed(() => {
+  const w = props.part.weight
+  return `×${Number.isInteger(w) ? w : w.toFixed(2).replace(/\.?0+$/, '')}`
+})
+</script>
+
+<style scoped>
+.part-card {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 8px;
+  border-radius: 6px;
+  border: 1px solid #374151;
+  border-left: 3px solid #6366f1;
+  background: #1f2937;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+  user-select: none;
+}
+
+.part-card:hover {
+  background: #283141;
+}
+
+.part-card--selected {
+  background: #2d3a4f;
+  border-color: #6366f1;
+}
+
+.part-card--disabled {
+  opacity: 0.45;
+}
+
+.drag-handle {
+  color: #4b5563;
+  cursor: grab;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+}
+
+.drag-handle:active {
+  cursor: grabbing;
+}
+
+.part-checkbox {
+  width: 15px;
+  height: 15px;
+  flex-shrink: 0;
+  cursor: pointer;
+  accent-color: #6366f1;
+}
+
+.part-label {
+  flex: 1;
+  font-size: 0.82rem;
+  color: #e5e7eb;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.part-label--off {
+  text-decoration: line-through;
+  color: #6b7280;
+}
+
+.inline-slider {
+  width: 160px;
+  accent-color: #6366f1;
+  flex-shrink: 0;
+  cursor: pointer;
+  margin: 0 4px;
+}
+
+.weight-badge {
+  font-size: 0.7rem;
+  padding: 1px 5px;
+  border-radius: 99px;
+  flex-shrink: 0;
+  font-weight: 600;
+  width: 44px;
+  text-align: center;
+  display: inline-block;
+  box-sizing: border-box;
+}
+
+.weight-badge--high {
+  background: #4c1d95;
+  color: #c4b5fd;
+}
+
+.weight-badge--low {
+  background: #1e3a5f;
+  color: #93c5fd;
+}
+</style>
