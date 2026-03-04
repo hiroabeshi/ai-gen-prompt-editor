@@ -12,6 +12,11 @@
       <div class="guide-modal__body">
         <p class="guide-text">このアプリは、NovelAI用のプロンプトを視覚的に組み立て・管理するためのツールです。</p>
 
+        <div class="alpha-warning">
+          <strong>⚠️ アルファ版について</strong><br>
+          現在このツールはアルファ版（開発初期段階）です。予期せぬ不具合が発生する可能性があります。あらかじめご了承ください。
+        </div>
+
         <div class="guide-step">
           <h3 class="guide-step__title">1. パーツを選ぶ</h3>
           <p class="guide-text">画面左側のライブラリには、ポーズや服装などのカテゴリごとにプロンプトのパーツが用意されています。<br>使いたいパーツを、中央の枠（スロット）にドラッグ＆ドロップして追加してください。</p>
@@ -129,6 +134,17 @@ defineEmits<{ (e: 'close'): void }>()
 
 .guide-text {
   margin-bottom: 18px;
+}
+
+.alpha-warning {
+  background-color: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  color: #fca5a5;
+  padding: 12px 16px;
+  border-radius: 6px;
+  margin-bottom: 24px;
+  font-size: 0.9rem;
+  line-height: 1.5;
 }
 
 .guide-step {
