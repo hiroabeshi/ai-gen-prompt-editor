@@ -57,3 +57,25 @@ export type AIImportData = {
     schemaVersion: string;
     categories: AIImportCategory[];
 }
+
+// ============================================================
+//  ランダマイザ ユーティリティ
+// ============================================================
+
+/** ランダマイザ partId の固定プレフィックス */
+export const RANDOMIZER_PREFIX = 'randomizer__'
+
+/** partId がランダマイザかどうか判定する */
+export function isRandomizerPartId(partId: string): boolean {
+    return partId.startsWith(RANDOMIZER_PREFIX)
+}
+
+/** categoryId からランダマイザ用の固定 partId を生成する */
+export function randomizerPartId(categoryId: string): string {
+    return `${RANDOMIZER_PREFIX}${categoryId}`
+}
+
+/** ランダマイザ partId から categoryId を取り出す */
+export function categoryIdFromRandomizer(partId: string): string {
+    return partId.slice(RANDOMIZER_PREFIX.length)
+}

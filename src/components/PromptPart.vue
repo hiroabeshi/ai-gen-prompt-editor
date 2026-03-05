@@ -5,6 +5,7 @@
     :class="{
       'part-card--disabled': !part.enabled,
       'part-card--selected': isSelected,
+      'part-card--randomizer': isRandomizer,
     }"
     :style="{ borderLeftColor: categoryColor }"
     @click="$emit('select')"
@@ -26,14 +27,17 @@
       title="有効/無効の切り替え"
     />
 
+    <!-- ランダマイザアイコン -->
+    <span v-if="isRandomizer" class="randomizer-icon">🎲</span>
+
     <!-- ラベル -->
     <span class="part-label" :class="{ 'part-label--off': !part.enabled }">
       {{ masterLabel }}
     </span>
 
-    <!-- インライン強度調整スライダー -->
+    <!-- インライン強度調整スライダー（ランダマイザは非表示） -->
     <input
-      v-if="isSelected"
+      v-if="isSelected && !isRandomizer"
       type="range"
       class="inline-slider"
       :value="part.weight"
@@ -42,9 +46,9 @@
       @click.stop
     />
 
-    <!-- weight バッジ -->
+    <!-- weight バッジ（ランダマイザは非表示） -->
     <span
-      v-if="part.weight !== 1.0 || isSelected"
+      v-if="!isRandomizer && (part.weight !== 1.0 || isSelected)"
       class="weight-badge"
       :class="{
         'weight-badge--high': part.weight > 1.0,
@@ -53,6 +57,9 @@
     >
       {{ displayWeight }}
     </span>
+
+    <!-- ランダマイザバッジ -->
+    <span v-if="isRandomizer" class="randomizer-badge">RANDOM</span>
   </div>
 </template>
 
@@ -60,6 +67,7 @@
 import { computed } from 'vue'
 import { usePromptStore } from '../store/promptStore'
 import type { SelectedPart } from '../types'
+import { isRandomizerPartId } from '../types'
 
 const props = defineProps<{
   part: SelectedPart
@@ -78,6 +86,8 @@ function onWeightInput(e: Event) {
 }
 
 const store = usePromptStore()
+
+const isRandomizer = computed(() => isRandomizerPartId(props.part.partId))
 
 const masterPart = computed(() => store.getMasterPart(props.part.partId))
 const masterLabel = computed(() => masterPart.value?.label ?? '不明なパーツ')
@@ -184,5 +194,37 @@ const displayWeight = computed(() => {
 .weight-badge--low {
   background: #1e3a5f;
   color: #93c5fd;
+}
+
+/* ランダマイザ */
+.part-card--randomizer {
+  background: #1a1a2e;
+  border-style: dashed;
+  border-left-style: solid;
+}
+
+.part-card--randomizer:hover {
+  background: #252540;
+}
+
+.part-card--randomizer.part-card--selected {
+  background: #2d2d50;
+  border-color: #7c3aed;
+}
+
+.randomizer-icon {
+  font-size: 0.85rem;
+  flex-shrink: 0;
+}
+
+.randomizer-badge {
+  font-size: 0.6rem;
+  font-weight: 700;
+  color: #a78bfa;
+  background: #2e1065;
+  padding: 1px 5px;
+  border-radius: 3px;
+  letter-spacing: 0.05em;
+  flex-shrink: 0;
 }
 </style>

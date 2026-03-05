@@ -63,25 +63,33 @@
 
         <div v-if="openCategories.has(cat.id)" class="parts-list">
           <VueDraggable
-            :model-value="getPartsForCategory(cat.id)"
+            :model-value="getPartsWithRandomizer(cat.id)"
             :group="{ name: 'library', pull: 'clone', put: false }"
             item-key="id"
             :sort="false"
             :clone="clonePart"
           >
             <div
-              v-for="element in catParts[cat.id]"
+              v-for="element in getPartsWithRandomizer(cat.id)"
               :key="element.id"
               class="library-part"
+              :class="{ 'library-part--randomizer': isRandomizerPartId(element.id) }"
               :data-part-id="element.id"
               :style="{ borderLeftColor: cat.color }"
-              @click="$emit('select-master', element.id)"
+              @click="!isRandomizerPartId(element.id) && $emit('select-master', element.id)"
             >
-              <svg class="drag-icon" width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M9 3h2v2H9zm4 0h2v2h-2zM9 7h2v2H9zm4 0h2v2h-2zM9 11h2v2H9zm4 0h2v2h-2zM9 15h2v2H9zm4 0h2v2h-2zM9 19h2v2H9zm4 0h2v2h-2z"/>
-              </svg>
-              <span class="library-part__label">{{ element.label }}</span>
-              <span class="library-part__tag">{{ element.values.novelai }}</span>
+              <template v-if="isRandomizerPartId(element.id)">
+                <span class="randomizer-icon">🎲</span>
+                <span class="library-part__label">{{ element.label }}</span>
+                <span class="library-part__tag library-part__tag--randomizer">RANDOM</span>
+              </template>
+              <template v-else>
+                <svg class="drag-icon" width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M9 3h2v2H9zm4 0h2v2h-2zM9 7h2v2H9zm4 0h2v2h-2zM9 11h2v2H9zm4 0h2v2h-2zM9 15h2v2H9zm4 0h2v2h-2zM9 19h2v2H9zm4 0h2v2h-2z"/>
+                </svg>
+                <span class="library-part__label">{{ element.label }}</span>
+                <span class="library-part__tag">{{ element.values.novelai }}</span>
+              </template>
             </div>
           </VueDraggable>
 
@@ -110,7 +118,7 @@ import { VueDraggable } from 'vue-draggable-plus'
 import { v4 as uuidv4 } from 'uuid'
 import { usePromptStore } from '../store/promptStore'
 import type { PromptPart } from '../types'
-import { DEFAULT_PART_WEIGHT } from '../types'
+import { DEFAULT_PART_WEIGHT, randomizerPartId, isRandomizerPartId } from '../types'
 
 const emit = defineEmits<{
   'open-add-part': [categoryId?: string]
@@ -164,6 +172,19 @@ const draggableCategories = computed({
 
 function getPartsForCategory(categoryId: string): PromptPart[] {
   return catParts.value[categoryId] || []
+}
+
+/** ランダマイザを先頭に含むパーツリストを返す */
+function getPartsWithRandomizer(categoryId: string): PromptPart[] {
+  const cat = store.categories.find(c => c.id === categoryId)
+  if (!cat) return getPartsForCategory(categoryId)
+  const randPart: PromptPart = {
+    id: randomizerPartId(categoryId),
+    categoryId,
+    label: `${cat.name} @ランダマイザ`,
+    values: { novelai: '' },
+  }
+  return [randPart, ...getPartsForCategory(categoryId)]
 }
 
 // 初期状態で全カテゴリを閉じる
@@ -441,5 +462,33 @@ function clonePart(part: PromptPart) {
   background: #1f2937;
   color: #d1d5db;
   border-color: #4b5563;
+}
+
+/* ランダマイザパーツ */
+.library-part--randomizer {
+  background: #1a1a2e;
+  border-left-width: 2px;
+  border-style: dashed;
+  border-color: #374151;
+  border-left-style: solid;
+}
+
+.library-part--randomizer:hover {
+  background: #252540;
+}
+
+.randomizer-icon {
+  font-size: 0.85rem;
+  flex-shrink: 0;
+}
+
+.library-part__tag--randomizer {
+  font-size: 0.6rem;
+  font-weight: 700;
+  color: #a78bfa;
+  background: #2e1065;
+  padding: 1px 5px;
+  border-radius: 3px;
+  letter-spacing: 0.05em;
 }
 </style>

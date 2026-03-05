@@ -48,8 +48,8 @@
     </div>
 
     <!-- プロンプト出力プレビュー -->
-    <div v-if="promptText" class="prompt-preview" :title="promptText">
-      {{ promptText }}
+    <div v-if="promptPreview" class="prompt-preview" :title="promptCopy">
+      {{ promptPreview }}
     </div>
 
     <!-- D&D パーツリスト -->
@@ -119,7 +119,13 @@ const localParts = computed<SelectedPart[]>({
   },
 })
 
-const promptText = computed(() =>
+// プレビュー表示用: 🎲[カテゴリ名 から1つ] のプレースホルダ
+const promptPreview = computed(() =>
+  generatePrompt(props.slot.parts, store.library, store.categories, true)
+)
+
+// コピー用: 実際の ||..|| 構文を含むプロンプト
+const promptCopy = computed(() =>
   generatePrompt(props.slot.parts, store.library)
 )
 
@@ -152,9 +158,9 @@ function onEnd(evt: any): void {
 }
 
 async function copyPrompt(): Promise<void> {
-  if (!promptText.value) return
+  if (!promptCopy.value) return
   try {
-    await navigator.clipboard.writeText(promptText.value)
+    await navigator.clipboard.writeText(promptCopy.value)
     emit('copied')
   } catch {
     // clipboard 失敗時は何もしない

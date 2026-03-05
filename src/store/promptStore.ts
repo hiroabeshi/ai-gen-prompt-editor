@@ -2,7 +2,7 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { v4 as uuidv4 } from 'uuid'
 import type { AppState, Category, PromptPart, SelectedPart, Slot } from '../types'
-import { DEFAULT_PART_WEIGHT } from '../types'
+import { DEFAULT_PART_WEIGHT, isRandomizerPartId, randomizerPartId, categoryIdFromRandomizer } from '../types'
 import { defaultData } from '../data/defaultData'
 
 export const usePromptStore = defineStore('prompt', () => {
@@ -22,6 +22,18 @@ export const usePromptStore = defineStore('prompt', () => {
     )
 
     function getMasterPart(partId: string): PromptPart | undefined {
+        // ランダマイザの場合は仮想的な PromptPart を返す
+        if (isRandomizerPartId(partId)) {
+            const catId = categoryIdFromRandomizer(partId)
+            const cat = categories.value.find(c => c.id === catId)
+            if (!cat) return undefined
+            return {
+                id: partId,
+                categoryId: catId,
+                label: `${cat.name} @ランダマイザ`,
+                values: { novelai: '' }, // 実際のタグは generatePrompt 側で動的生成
+            }
+        }
         return library.value.find(p => p.id === partId)
     }
 
@@ -71,6 +83,8 @@ export const usePromptStore = defineStore('prompt', () => {
         for (const partId of partIds) {
             removePartFromAllSlots(partId)
         }
+        // ランダマイザインスタンスもスロットから除去
+        removePartFromAllSlots(randomizerPartId(id))
         library.value = library.value.filter(p => p.categoryId !== id)
         categories.value = categories.value.filter(c => c.id !== id)
     }
@@ -159,8 +173,15 @@ export const usePromptStore = defineStore('prompt', () => {
     // ─── Actions: スロット内パーツ ────────────────────────────
     function addPartToSlot(slotId: string, partId: string, insertIndex?: number): SelectedPart | undefined {
         const slot = slots.value.find(s => s.id === slotId)
-        const master = library.value.find(p => p.id === partId)
-        if (!slot || !master) return undefined
+        if (!slot) return undefined
+
+        // ランダマイザパーツの場合は library に存在しなくてもOK
+        const isRandomizer = isRandomizerPartId(partId)
+        if (!isRandomizer) {
+            const master = library.value.find(p => p.id === partId)
+            if (!master) return undefined
+        }
+
         const inst: SelectedPart = {
             id: uuidv4(),
             partId,
