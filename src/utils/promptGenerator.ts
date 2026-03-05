@@ -20,7 +20,10 @@ function buildRandomizerTag(partId: string, library: PromptPart[]): string {
     const catId = categoryIdFromRandomizer(partId)
     const catParts = library.filter(p => p.categoryId === catId)
     if (catParts.length === 0) return ''
-    const tags = catParts.map(p => p.values.novelai)
+    const tags = catParts
+        .map(p => p.values.novelai.replace(/[\s,]+$/, '').trim())
+        .filter(t => t !== '')
+    if (tags.length === 0) return ''
     return `||${tags.join('|')}||`
 }
 
@@ -59,7 +62,9 @@ export function generatePrompt(
             }
             // 通常パーツの処理
             const master = library.find(m => m.id === p.partId)
-            const tag = master ? master.values.novelai : ''
+            let tag = master ? master.values.novelai : ''
+            tag = tag.replace(/[\s,]+$/, '').trim()
+            if (!tag) return ''
             return formatByWeight(tag, p.weight)
         })
         .filter(t => t !== '')

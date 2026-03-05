@@ -1,5 +1,5 @@
 <template>
-  <div class="modal-overlay" @click.self="$emit('close')">
+  <div class="modal-overlay" @dblclick.self="$emit('close')">
     <div class="modal">
       <div class="modal__header">
         <span class="modal__title">新規カテゴリを追加</span>
