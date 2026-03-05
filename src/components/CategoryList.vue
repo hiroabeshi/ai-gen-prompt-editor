@@ -51,6 +51,7 @@
             @click.stop="$emit('open-add-part', cat.id)"
           >
             <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+            パーツを追加
           </button>
           <svg
             class="category-chevron"
@@ -369,20 +370,23 @@ function clonePart(part: PromptPart) {
 
 .category-add-btn {
   background: transparent;
-  border: none;
+  border: 1px dashed #374151;
   color: #6b7280;
   cursor: pointer;
-  padding: 4px;
+  padding: 4px 8px;
   border-radius: 4px;
   display: flex;
   align-items: center;
-  transition: background 0.15s, color 0.15s;
+  gap: 4px;
+  font-size: 0.7rem;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
   margin-right: 8px;
 }
 
 .category-add-btn:hover {
   background: #374151;
   color: #d1d5db;
+  border-color: #6b7280;
 }
 
 .category-chevron {

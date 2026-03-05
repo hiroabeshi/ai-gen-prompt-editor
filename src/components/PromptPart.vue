@@ -10,30 +10,32 @@
     :style="{ borderLeftColor: categoryColor }"
     @click="$emit('select')"
   >
-    <!-- D&D ハンドル -->
-    <div class="drag-handle" title="ドラッグして並び替え">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-        <path d="M9 3h2v2H9zm4 0h2v2h-2zM9 7h2v2H9zm4 0h2v2h-2zM9 11h2v2H9zm4 0h2v2h-2zM9 15h2v2H9zm4 0h2v2h-2zM9 19h2v2H9zm4 0h2v2h-2z"/>
-      </svg>
+    <!-- 左側全体をドラッグハンドルにする -->
+    <div class="part-left-side drag-handle" title="ドラッグして並び替え">
+      <div class="drag-icon">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M9 3h2v2H9zm4 0h2v2h-2zM9 7h2v2H9zm4 0h2v2h-2zM9 11h2v2H9zm4 0h2v2h-2zM9 15h2v2H9zm4 0h2v2h-2zM9 19h2v2H9zm4 0h2v2h-2z"/>
+        </svg>
+      </div>
+
+      <!-- チェックボックス (ON/OFF) -->
+      <input
+        type="checkbox"
+        class="part-checkbox"
+        :checked="part.enabled"
+        @change.stop="$emit('toggle')"
+        @click.stop
+        title="有効/無効の切り替え"
+      />
+
+      <!-- ランダマイザアイコン -->
+      <span v-if="isRandomizer" class="randomizer-icon">🎲</span>
+
+      <!-- ラベル -->
+      <span class="part-label" :class="{ 'part-label--off': !part.enabled }">
+        {{ masterLabel }}
+      </span>
     </div>
-
-    <!-- チェックボックス (ON/OFF) -->
-    <input
-      type="checkbox"
-      class="part-checkbox"
-      :checked="part.enabled"
-      @change.stop="$emit('toggle')"
-      @click.stop
-      title="有効/無効の切り替え"
-    />
-
-    <!-- ランダマイザアイコン -->
-    <span v-if="isRandomizer" class="randomizer-icon">🎲</span>
-
-    <!-- ラベル -->
-    <span class="part-label" :class="{ 'part-label--off': !part.enabled }">
-      {{ masterLabel }}
-    </span>
 
     <!-- インライン強度調整スライダー（ランダマイザは非表示） -->
     <input
@@ -60,6 +62,17 @@
 
     <!-- ランダマイザバッジ -->
     <span v-if="isRandomizer" class="randomizer-badge">RANDOM</span>
+
+    <!-- スロット内から削除ボタン -->
+    <button
+      class="part-delete-btn"
+      title="スロットから削除"
+      @click.stop="$emit('remove')"
+    >
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+      </svg>
+    </button>
   </div>
 </template>
 
@@ -78,6 +91,7 @@ const emit = defineEmits<{
   select: []
   toggle: []
   'update-weight': [weight: number]
+  remove: []
 }>()
 
 function onWeightInput(e: Event) {
@@ -133,15 +147,23 @@ const displayWeight = computed(() => {
 }
 
 .drag-handle {
-  color: #4b5563;
-  cursor: grab;
-  flex-shrink: 0;
   display: flex;
   align-items: center;
+  gap: 6px;
+  flex: 1;
+  min-width: 0;
+  cursor: grab;
 }
 
 .drag-handle:active {
   cursor: grabbing;
+}
+
+.drag-icon {
+  color: #4b5563;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
 }
 
 .part-checkbox {
@@ -162,7 +184,6 @@ const displayWeight = computed(() => {
 }
 
 .part-label--off {
-  text-decoration: line-through;
   color: #6b7280;
 }
 
@@ -226,5 +247,24 @@ const displayWeight = computed(() => {
   border-radius: 3px;
   letter-spacing: 0.05em;
   flex-shrink: 0;
+}
+
+.part-delete-btn {
+  background: transparent;
+  border: none;
+  color: #6b7280;
+  cursor: pointer;
+  padding: 2px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: background 0.15s, color 0.15s;
+}
+
+.part-delete-btn:hover {
+  background: #7f1d1d;
+  color: #fca5a5;
 }
 </style>

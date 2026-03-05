@@ -48,8 +48,8 @@
     </div>
 
     <!-- プロンプト出力プレビュー -->
-    <div v-if="promptPreview" class="prompt-preview" :title="promptCopy">
-      {{ promptPreview }}
+    <div class="prompt-preview" :title="promptCopy">
+      {{ promptPreview || '\u00A0' }}
     </div>
 
     <!-- D&D パーツリスト -->
@@ -74,6 +74,7 @@
           @select="$emit('select-part', slot.id, element.id)"
           @toggle="store.togglePart(slot.id, element.id)"
           @update-weight="store.setPartWeight(slot.id, element.id, $event)"
+          @remove="removePart(element.id)"
         />
       </VueDraggable>
       <!-- 空スロットのヒント: pointer-events:none で draggable の背面に配置 -->
@@ -165,6 +166,11 @@ async function copyPrompt(): Promise<void> {
   } catch {
     // clipboard 失敗時は何もしない
   }
+}
+
+function removePart(instanceId: string) {
+  const newParts = props.slot.parts.filter(p => p.id !== instanceId)
+  store.reorderSlotParts(props.slot.id, newParts)
 }
 </script>
 

@@ -1,5 +1,5 @@
 <template>
-  <aside class="editor-panel">
+  <aside class="editor-panel" :class="{ 'flash-highlight': isFlashing }">
     <div class="editor-panel__header">
       <span class="editor-panel__title">
         <template v-if="mode === 'master'">マスターパーツ編集</template>
@@ -210,6 +210,29 @@ const emit = defineEmits<{
 
 const store = usePromptStore()
 
+// 視線誘導のフラッシュ効果用
+const isFlashing = ref(false)
+let flashTimer: ReturnType<typeof setTimeout> | null = null
+
+const flashTrigger = computed(() => {
+  if (props.mode === 'master') return `master-${props.masterPart?.id}`
+  if (props.mode === 'category') return `category-${props.category?.id}`
+  return null
+})
+
+watch(flashTrigger, (newVal, oldVal) => {
+  if (newVal && newVal !== oldVal) {
+    isFlashing.value = false
+    if (flashTimer) clearTimeout(flashTimer)
+    setTimeout(() => {
+      isFlashing.value = true
+      flashTimer = setTimeout(() => {
+        isFlashing.value = false
+      }, 1200)
+    }, 10)
+  }
+})
+
 // マスター編集フォーム
 const editLabel = ref('')
 const editNovelai = ref('')
@@ -364,6 +387,16 @@ function doDeleteCategory(): void {
   display: flex;
   flex-direction: column;
   overflow: hidden;
+}
+
+@keyframes highlightFlash {
+  0% { background-color: #0f172a; box-shadow: inset 0 0 0 rgba(99, 102, 241, 0); }
+  15% { background-color: #1e293b; box-shadow: inset 0 0 8px rgba(99, 102, 241, 0.15); }
+  100% { background-color: #0f172a; box-shadow: inset 0 0 0 rgba(99, 102, 241, 0); }
+}
+
+.flash-highlight {
+  animation: highlightFlash 1.2s ease-in-out;
 }
 
 .editor-panel__header {
