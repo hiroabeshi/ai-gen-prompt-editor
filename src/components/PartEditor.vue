@@ -217,6 +217,7 @@ let flashTimer: ReturnType<typeof setTimeout> | null = null
 const flashTrigger = computed(() => {
   if (props.mode === 'master') return `master-${props.masterPart?.id}`
   if (props.mode === 'category') return `category-${props.category?.id}`
+  if (props.mode === 'slot-info') return `slot-info-${props.slot?.id}`
   return null
 })
 
