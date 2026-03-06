@@ -68,22 +68,25 @@
       <label class="field-label">マスター参照タグ</label>
       <input
         class="field-input field-input--readonly"
+        :class="{ 'is-disabled': isRandomizer }"
         :value="masterTagOfInstance"
         readonly
+        :disabled="isRandomizer"
         title="マスターデータを参照"
       />
       <p class="field-hint">このスロットインスタンスが参照しているタグ</p>
 
       <div class="divider"></div>
-      <label class="field-label">強度調整（このスロット限定）</label>
+      <label class="field-label" :class="{ 'is-disabled-text': isRandomizer }">強度調整（このスロット限定）</label>
       <div class="weight-row">
         <input
           type="range"
           class="weight-slider"
           v-model.number="instanceWeight"
           min="-2.5" max="5.0" step="0.1"
+          :disabled="isRandomizer"
         />
-        <span class="weight-val">{{ instanceWeight.toFixed(2) }}</span>
+        <span class="weight-val" :class="{ 'is-disabled-text': isRandomizer }">{{ instanceWeight.toFixed(2) }}</span>
       </div>
 
       <div class="divider"></div>
@@ -191,7 +194,7 @@
 <script setup lang="ts">
 import { ref, watch, computed } from 'vue'
 import { usePromptStore } from '../store/promptStore'
-import type { PromptPart, SelectedPart, Category, Slot } from '../types'
+import { isRandomizerPartId, type PromptPart, type SelectedPart, type Category, type Slot } from '../types'
 
 const props = defineProps<{
   mode: 'master' | 'slot' | 'category' | 'slot-info' | null
@@ -277,8 +280,13 @@ const masterLabelOfInstance = computed(() => {
   return store.getMasterPart(props.instancePart.partId)?.label ?? '不明なパーツ'
 })
 
+const isRandomizer = computed(() => {
+  return props.instancePart ? isRandomizerPartId(props.instancePart.partId) : false
+})
+
 const masterTagOfInstance = computed(() => {
   if (!props.instancePart) return ''
+  if (isRandomizer.value) return 'ランダマイザ'
   return store.getMasterPart(props.instancePart.partId)?.values.novelai ?? ''
 })
 
@@ -514,12 +522,26 @@ function doDeleteCategory(): void {
   accent-color: #6366f1;
 }
 
+.weight-slider:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
 .weight-val {
   font-size: 0.82rem;
   font-weight: 600;
   color: #c4b5fd;
   min-width: 36px;
   text-align: right;
+}
+
+.is-disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.is-disabled-text {
+  opacity: 0.4;
 }
 
 .divider {
