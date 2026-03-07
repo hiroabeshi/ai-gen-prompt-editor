@@ -68,6 +68,7 @@
           <ul class="guide-patch-notes__list">
             <li><strong>ver 0.1:</strong> リリース</li>
             <li><strong>ver 0.2:</strong> ランダマイザ実装</li>
+            <li><strong>ver 0.3:</strong> カテゴリ強化、1.0.0データ移行実装</li>
           </ul>
         </div>
       </div>
