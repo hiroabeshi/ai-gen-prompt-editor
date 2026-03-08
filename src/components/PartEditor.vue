@@ -15,19 +15,21 @@
     <!-- マスターパーツ編集 -->
     <div v-if="mode === 'master' && masterPart" class="editor-body">
       <label class="field-label">表示ラベル名</label>
-      <input
-        class="field-input"
+      <AutocompleteInput
         v-model="editLabel"
         placeholder="例: 金髪ロング"
+        :search-fn="suggestByLabel"
+        @select="onSuggestLabelSelect"
         @blur="saveMaster"
       />
       <p class="field-hint">アプリ内で表示される名前</p>
 
       <label class="field-label mt">NovelAI タグ</label>
-      <input
-        class="field-input"
+      <AutocompleteInput
         v-model="editNovelai"
         placeholder="例: blonde hair, long hair"
+        :search-fn="suggestByTag"
+        @select="onSuggestTagSelect"
         @blur="saveMaster"
       />
       <p class="field-hint">AI に送信される実際の文字列</p>
@@ -195,6 +197,8 @@
 import { ref, watch, computed } from 'vue'
 import { usePromptStore } from '../store/promptStore'
 import { isRandomizerPartId, type PromptPart, type SelectedPart, type Category, type Slot } from '../types'
+import AutocompleteInput from './AutocompleteInput.vue'
+import { suggestByLabel, suggestByTag, type DictEntry } from '../utils/dictionaryService'
 
 const props = defineProps<{
   mode: 'master' | 'slot' | 'category' | 'slot-info' | null
@@ -263,6 +267,16 @@ function saveMaster(): void {
       novelai: editNovelai.value,
     },
   })
+}
+
+function onSuggestLabelSelect(entry: DictEntry): void {
+  editLabel.value = entry.label
+  saveMaster()
+}
+
+function onSuggestTagSelect(entry: DictEntry): void {
+  editNovelai.value = entry.tag
+  saveMaster()
 }
 
 // インスタンス weight

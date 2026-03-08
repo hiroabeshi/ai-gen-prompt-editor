@@ -8,73 +8,58 @@
         </button>
       </div>
 
-      <div class="modal__body">
-        <label class="field-label">カテゴリ <span class="required">*</span></label>
-        <select v-model="form.categoryId" class="field-input">
-          <option value="" disabled>カテゴリを選択...</option>
-          <option v-for="cat in store.categories" :key="cat.id" :value="cat.id">
-            {{ cat.name }}
-          </option>
-        </select>
-
-        <label class="field-label mt">表示ラベル名 <span class="required">*</span></label>
-        <input
-          v-model="form.label"
-          class="field-input"
-          placeholder="例: 金髪ロング"
-          autofocus
-        />
-
-        <label class="field-label mt">NovelAI タグ <span class="required">*</span></label>
-        <input
-          v-model="form.novelai"
-          class="field-input"
-          placeholder="例: blonde hair, long hair"
-        />
-
-
-
-        <p v-if="error" class="error-msg">{{ error }}</p>
+      <!-- タブヘッダー -->
+      <div class="tab-bar">
+        <button
+          :class="['tab-btn', { 'tab-btn--active': activeTab === 'dictionary' }]"
+          @click="activeTab = 'dictionary'"
+        >
+          <span style="font-size: 1.1em; margin-right: 4px;">📦</span>
+          Danbooru 人気順から検索
+        </button>
+        <button
+          :class="['tab-btn', { 'tab-btn--active': activeTab === 'manual' }]"
+          @click="activeTab = 'manual'"
+        >
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a.996.996 0 000-1.41l-2.34-2.34a.996.996 0 00-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+          手入力
+        </button>
       </div>
 
-      <div class="modal__footer">
-        <button class="btn-ghost" @click="$emit('close')">キャンセル</button>
-        <button class="btn-primary" @click="submit">追加する</button>
+      <!-- タブコンテンツ -->
+      <div class="modal__body">
+        <DictionaryAddTab
+          v-if="activeTab === 'dictionary'"
+          :initial-category-id="initialCategoryId"
+          @close="$emit('close')"
+          @added="$emit('added')"
+        />
+        <ManualAddTab
+          v-if="activeTab === 'manual'"
+          :initial-category-id="initialCategoryId"
+          @close="$emit('close')"
+          @added="$emit('added')"
+        />
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { reactive, ref } from 'vue'
-import { usePromptStore } from '../store/promptStore'
+import { ref } from 'vue'
+import DictionaryAddTab from './DictionaryAddTab.vue'
+import ManualAddTab from './ManualAddTab.vue'
 
-const props = defineProps<{
+defineProps<{
   initialCategoryId?: string
 }>()
 
-const emit = defineEmits<{
+defineEmits<{
   close: []
   added: []
 }>()
 
-const store = usePromptStore()
-const error = ref('')
-
-const form = reactive({
-  categoryId: props.initialCategoryId || (store.categories[0]?.id ?? ''),
-  label: '',
-  novelai: '',
-})
-
-function submit(): void {
-  if (!form.categoryId) { error.value = 'カテゴリを選択してください。'; return }
-  if (!form.label.trim()) { error.value = 'ラベル名を入力してください。'; return }
-  if (!form.novelai.trim()) { error.value = 'NovelAI タグを入力してください。'; return }
-  store.addPart(form.categoryId, form.label.trim(), form.novelai.trim())
-  emit('added')
-  emit('close')
-}
+const activeTab = ref<'dictionary' | 'manual'>('dictionary')
 </script>
 
 <style scoped>
@@ -87,33 +72,37 @@ function submit(): void {
   justify-content: center;
   z-index: 1000;
   backdrop-filter: blur(2px);
+  padding: 16px;
 }
 
 .modal {
   background: #111827;
   border: 1px solid #374151;
   border-radius: 12px;
-  width: 400px;
-  max-width: 95vw;
+  width: 900px;
+  max-width: 100%;
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
   box-shadow: 0 20px 60px rgba(0,0,0,0.5);
-  animation: modal-in 0.15s ease-out;
+  animation: modal-in 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 @keyframes modal-in {
-  from { opacity: 0; transform: scale(0.95) translateY(-10px); }
-  to   { opacity: 1; transform: scale(1) translateY(0); }
+  from { opacity: 0; transform: translateY(10px) scale(0.98); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
 }
 
 .modal__header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 14px 16px;
+  padding: 14px 20px;
   border-bottom: 1px solid #1f2937;
 }
 
 .modal__title {
-  font-size: 0.9rem;
+  font-size: 1rem;
   font-weight: 700;
   color: #e5e7eb;
 }
@@ -127,74 +116,52 @@ function submit(): void {
   border-radius: 4px;
   display: flex;
   align-items: center;
+  transition: color 0.15s;
 }
 
 .icon-btn:hover { color: #d1d5db; }
 
+/* ─── タブバー ─── */
+.tab-bar {
+  display: flex;
+  gap: 0;
+  border-bottom: 1px solid #1f2937;
+  padding: 0 20px;
+  background: #0d1117;
+}
+
+.tab-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: #6b7280;
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 10px 16px;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
+}
+
+.tab-btn:hover {
+  color: #d1d5db;
+}
+
+.tab-btn--active {
+  color: #a5b4fc;
+  border-bottom-color: #6366f1;
+}
+
+/* ─── ボディ ─── */
 .modal__body {
-  padding: 16px;
+  padding: 16px 20px;
+  overflow-y: hidden;
   display: flex;
   flex-direction: column;
+  flex: 1;
+  min-height: 500px;
+  max-height: 65vh;
 }
-
-.modal__footer {
-  display: flex;
-  justify-content: flex-end;
-  gap: 8px;
-  padding: 12px 16px;
-  border-top: 1px solid #1f2937;
-}
-
-.field-label {
-  font-size: 0.72rem;
-  font-weight: 600;
-  color: #9ca3af;
-  margin-bottom: 4px;
-}
-
-.field-label.mt { margin-top: 12px; }
-
-.required { color: #f87171; }
-
-.field-input {
-  width: 100%;
-  box-sizing: border-box;
-  background: #1f2937;
-  border: 1px solid #374151;
-  border-radius: 6px;
-  padding: 7px 10px;
-  font-size: 0.82rem;
-  color: #e5e7eb;
-  outline: none;
-}
-
-.field-input:focus { border-color: #6366f1; }
-
-
-.error-msg { font-size: 0.75rem; color: #f87171; margin: 8px 0 0; }
-
-.btn-primary {
-  background: #4f46e5;
-  color: #fff;
-  border: none;
-  border-radius: 6px;
-  padding: 8px 16px;
-  font-size: 0.82rem;
-  cursor: pointer;
-  transition: background 0.15s;
-}
-
-.btn-primary:hover { background: #4338ca; }
-
-.btn-ghost {
-  background: transparent;
-  border: 1px solid #374151;
-  color: #9ca3af;
-  border-radius: 6px;
-  padding: 8px 16px;
-  font-size: 0.82rem;
-  cursor: pointer;
-}
-
-.btn-ghost:hover { background: #1f2937; }
 </style>
