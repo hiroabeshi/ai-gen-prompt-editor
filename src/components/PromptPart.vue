@@ -8,7 +8,7 @@
       'part-card--randomizer': isRandomizer,
     }"
     :style="{ borderLeftColor: categoryColor }"
-    @click="$emit('select')"
+    @click="$emit('select', $event)"
   >
     <!-- 左側全体をドラッグハンドルにする -->
     <div class="part-left-side drag-handle" title="ドラッグして並び替え">
@@ -88,7 +88,7 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
-  select: []
+  select: [event: MouseEvent]
   toggle: []
   'update-weight': [weight: number]
   remove: []

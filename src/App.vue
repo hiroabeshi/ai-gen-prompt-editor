@@ -44,10 +44,11 @@
       </nav>
     </header>
 
-    <!-- ─── ボディ (3カラム) ─── -->
+    <!-- ─── ボディ (2カラム) ─── -->
     <div class="app-body">
       <!-- 左: パーツ倉庫 -->
       <CategoryList
+        ref="categoryListRef"
         @open-add-part="openAddPartModal"
         @open-add-category="openAddCategoryModal"
         @select-master="onSelectMaster"
@@ -76,19 +77,6 @@
           </button>
         </div>
       </main>
-
-      <!-- 右: パーツエディタ -->
-      <PartEditor
-        :mode="editorMode"
-        :master-part="selectedMasterPart"
-        :instance-part="selectedInstance"
-        :slot-id="selectedSlotId"
-        :slot="selectedSlot"
-        :category="selectedCategory"
-        @close="clearSelection"
-        @remove-from-slot="removeSelectedFromSlot"
-        @deleted="clearSelection"
-      />
     </div>
 
     <!-- モーダル群 -->
@@ -101,6 +89,20 @@
     <AddSlotModal v-if="showAddSlot" @close="showAddSlot = false" @added="() => {}" />
     <AddCategoryModal v-if="showAddCategory" @close="showAddCategory = false" @added="() => {}" />
     <GuideModal v-if="showGuide" @close="showGuide = false" />
+    <EditCategoryModal v-if="showEditCategory" :category-id="selectedCategoryId!" :x="modalX" :y="modalY" @close="closeEditCategory" @deleted="clearSelection" />
+    <EditMasterPartModal v-if="showEditMasterPart" :part-id="selectedMasterPartId!" :x="modalX" :y="modalY" @close="closeEditMasterPart" @deleted="clearSelection" />
+    <PartEditor
+      v-if="showPartEditor && editorMode"
+      :mode="editorMode"
+      :instance-part="selectedInstance"
+      :slot-id="selectedSlotId"
+      :slot="selectedSlot"
+      :x="modalX"
+      :y="modalY"
+      @close="clearSelection"
+      @remove-from-slot="removeSelectedFromSlot"
+      @deleted="clearSelection"
+    />
 
     <!-- AIインポート: 重複カテゴリ確認ダイアログ -->
     <div v-if="aiConflictQueue.length > 0" class="modal-overlay" @click.self="resolveAllConflicts('add')">
@@ -141,9 +143,13 @@ import AddPartModal from './components/AddPartModal.vue'
 import AddSlotModal from './components/AddSlotModal.vue'
 import AddCategoryModal from './components/AddCategoryModal.vue'
 import GuideModal from './components/GuideModal.vue'
-import type { PromptPart, SelectedPart, AIImportData } from './types'
+import EditCategoryModal from './components/EditCategoryModal.vue'
+import EditMasterPartModal from './components/EditMasterPartModal.vue'
+import type { SelectedPart, AIImportData } from './types'
 
 const store = usePromptStore()
+
+const categoryListRef = ref<InstanceType<typeof CategoryList> | null>(null)
 
 // ─── モーダル制御 ────────────────────────────────────────────
 const showAddPart = ref(false)
@@ -166,64 +172,93 @@ function closeAddPartModal(): void {
   addPartCategoryId.value = undefined
 }
 
+const showEditCategory = ref(false)
+const showEditMasterPart = ref(false)
+const modalX = ref(0)
+const modalY = ref(0)
+
 // ─── パーツ選択・エディタ ─────────────────────────────────────
-type EditorMode = 'master' | 'slot' | 'category' | 'slot-info' | null
+type EditorMode = 'slot' | 'slot-info' | null
 
 const editorMode = ref<EditorMode>(null)
-const selectedMasterPart = ref<PromptPart | null>(null)
+const showPartEditor = ref(false)
+const selectedMasterPartId = ref<string | null>(null)
 const selectedInstance = ref<SelectedPart | null>(null)
 const selectedSlotId = ref<string | null>(null)
 const selectedCategoryId = ref<string | null>(null)
 const selectedInstanceId = computed(() => selectedInstance.value?.id ?? null)
 
-const selectedCategory = computed(() => {
-  return store.categories.find(c => c.id === selectedCategoryId.value) ?? null
-})
+
 
 const selectedSlot = computed(() => {
   return store.slots.find(s => s.id === selectedSlotId.value) ?? null
 })
 
-function onSelectCategory(categoryId: string): void {
-  editorMode.value = 'category'
+function onSelectCategory(categoryId: string, event: MouseEvent): void {
   selectedCategoryId.value = categoryId
-  selectedMasterPart.value = null
-  selectedInstance.value = null
-  selectedSlotId.value = null
+  modalX.value = event.clientX
+  modalY.value = event.clientY
+  showEditCategory.value = true
 }
 
-function onSelectMaster(partId: string): void {
-  const part = store.getMasterPart(partId)
-  if (!part) return
-  editorMode.value = 'master'
-  selectedMasterPart.value = part
-  selectedInstance.value = null
-  selectedSlotId.value = null
+function closeEditCategory(): void {
+  showEditCategory.value = false
   selectedCategoryId.value = null
 }
 
-function onSelectSlotPart(slotId: string, instanceId: string): void {
+function onSelectMaster(partId: string, event: MouseEvent): void {
+  selectedMasterPartId.value = partId
+  modalX.value = event.clientX
+  modalY.value = event.clientY
+  showEditMasterPart.value = true
+}
+
+function closeEditMasterPart(): void {
+  showEditMasterPart.value = false
+  selectedMasterPartId.value = null
+}
+
+function onSelectSlotPart(slotId: string, instanceId: string, event: MouseEvent): void {
   const slot = store.slots.find(s => s.id === slotId)
   const inst = slot?.parts.find(p => p.id === instanceId)
   if (!inst) return
+
+  const alreadySelected = selectedInstance.value?.id === instanceId
+
   editorMode.value = 'slot'
   selectedSlotId.value = slotId
   selectedInstance.value = inst
-  selectedMasterPart.value = null
+  selectedMasterPartId.value = null
   selectedCategoryId.value = null
+
+  // 2回目クリック（既に選択済み）でポップアップを開く
+  if (alreadySelected) {
+    modalX.value = event.clientX
+    modalY.value = event.clientY
+    showPartEditor.value = true
+  } else {
+    showPartEditor.value = false
+  }
+
+  // Target part focus in CategoryList
+  categoryListRef.value?.focusPart(inst.partId)
 }
 
-function onEditSlot(slotId: string): void {
+function onEditSlot(slotId: string, event: MouseEvent): void {
   editorMode.value = 'slot-info'
   selectedSlotId.value = slotId
   selectedInstance.value = null
-  selectedMasterPart.value = null
+  selectedMasterPartId.value = null
   selectedCategoryId.value = null
+  modalX.value = event.clientX
+  modalY.value = event.clientY
+  showPartEditor.value = true
 }
 
 function clearSelection(): void {
   editorMode.value = null
-  selectedMasterPart.value = null
+  showPartEditor.value = false
+  selectedMasterPartId.value = null
   selectedInstance.value = null
   selectedSlotId.value = null
   selectedCategoryId.value = null

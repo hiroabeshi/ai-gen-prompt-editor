@@ -4,7 +4,7 @@
     <div class="slot-header">
       <div
         class="slot-header__left"
-        @click="$emit('edit-slot', slot.id)"
+        @click="$emit('edit-slot', slot.id, $event)"
         title="スロットを編集"
         role="button"
         tabindex="0"
@@ -71,7 +71,7 @@
           :key="element.id"
           :part="element"
           :is-selected="selectedInstanceId === element.id"
-          @select="$emit('select-part', slot.id, element.id)"
+          @select="(e) => $emit('select-part', slot.id, element.id, e)"
           @toggle="store.togglePart(slot.id, element.id)"
           @update-weight="store.setPartWeight(slot.id, element.id, $event)"
           @remove="removePart(element.id)"
@@ -104,8 +104,8 @@ const props = defineProps<{
 const emit = defineEmits<{
   delete: []
   duplicate: []
-  'select-part': [slotId: string, instanceId: string]
-  'edit-slot': [slotId: string]
+  'select-part': [slotId: string, instanceId: string, event: MouseEvent]
+  'edit-slot': [slotId: string, event: MouseEvent]
   copied: []
 }>()
 
