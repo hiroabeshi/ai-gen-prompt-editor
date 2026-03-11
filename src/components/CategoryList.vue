@@ -42,7 +42,7 @@
             class="category-header"
             :class="{ 'cat-drag-handle': !isMobile }"
             :style="{ borderLeftColor: cat.color }"
-            @click="onCategoryClick(cat.id, $event)"
+            @click="onCategoryClick(cat.id)"
           >
           <div class="cat-drag-area" :class="{ 'cat-drag-handle': isMobile }">
             <span class="category-color-dot" :style="{ background: cat.color }"></span>
@@ -57,7 +57,7 @@
             <span class="add-btn-text">パーツを追加</span>
           </button>
           <button
-            class="category-edit-btn-mobile"
+            class="category-edit-btn"
             title="カテゴリを編集"
             @click.stop="$emit('select-category', cat.id, $event)"
           >
@@ -230,19 +230,8 @@ function toggleCategory(id: string): void {
   }
 }
 
-function onCategoryClick(id: string, event: MouseEvent): void {
-  if (openCategories.value.has(id)) {
-    if (isMobile.value) {
-      // スマホ版： ポップアップと競合して閉じられなくなるため、アコーディオンを閉じる
-      toggleCategory(id)
-    } else {
-      // PC版：すでに開いている → popup を出す（閉じない）
-      emit('select-category', id, event)
-    }
-  } else {
-    // 閉じている → 開くだけ（popup なし）
-    toggleCategory(id)
-  }
+function onCategoryClick(id: string): void {
+  toggleCategory(id)
 }
 
 // vuedraggable の clone 用: SelectedPart の形に変換
@@ -473,8 +462,7 @@ defineExpose({
   border-color: #6b7280;
 }
 
-.category-edit-btn-mobile {
-  display: none;
+.category-edit-btn {
   background: transparent;
   border: 1px dashed #374151;
   color: #6b7280;
@@ -487,7 +475,7 @@ defineExpose({
   transition: background 0.15s, color 0.15s, border-color 0.15s;
 }
 
-.category-edit-btn-mobile:hover {
+.category-edit-btn:hover {
   background: #374151;
   color: #d1d5db;
   border-color: #6b7280;
@@ -632,10 +620,6 @@ defineExpose({
   
   .add-btn-text {
     display: none;
-  }
-  
-  .category-edit-btn-mobile {
-    display: flex;
   }
 }
 </style>
