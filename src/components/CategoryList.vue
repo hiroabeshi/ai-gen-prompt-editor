@@ -28,7 +28,7 @@
       <VueDraggable
         v-model="draggableCategories"
         group="categories"
-        handle=".category-header"
+        handle=".cat-drag-handle"
         item-key="id"
         :animation="150"
       >
@@ -40,10 +40,13 @@
           <!-- カテゴリヘッダー -->
           <div
             class="category-header"
+            :class="{ 'cat-drag-handle': !isMobile }"
             :style="{ borderLeftColor: cat.color }"
             @click="onCategoryClick(cat.id, $event)"
           >
-          <span class="category-color-dot" :style="{ background: cat.color }"></span>
+          <div class="cat-drag-area" :class="{ 'cat-drag-handle': isMobile }">
+            <span class="category-color-dot" :style="{ background: cat.color }"></span>
+          </div>
           <span class="category-name">{{ cat.name }}</span>
           <button
             class="category-add-btn"
@@ -51,7 +54,14 @@
             @click.stop="$emit('open-add-part', cat.id)"
           >
             <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
-            パーツを追加
+            <span class="add-btn-text">パーツを追加</span>
+          </button>
+          <button
+            class="category-edit-btn-mobile"
+            title="カテゴリを編集"
+            @click.stop="$emit('select-category', cat.id, $event)"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
           </button>
           <svg
             class="category-chevron"
@@ -69,6 +79,7 @@
             item-key="id"
             :sort="false"
             :clone="clonePart"
+            handle=".lib-drag-handle"
           >
             <div
               v-for="element in getPartsWithRandomizer(cat.id)"
@@ -76,21 +87,26 @@
               class="library-part"
               :class="{
                 'library-part--randomizer': isRandomizerPartId(element.id),
-                'library-part--glow': glowingPartId === element.id
+                'library-part--glow': glowingPartId === element.id,
+                'lib-drag-handle': !isMobile
               }"
               :data-part-id="element.id"
               :style="{ borderLeftColor: cat.color }"
               @click="!isRandomizerPartId(element.id) && $emit('select-master', element.id, $event)"
             >
               <template v-if="isRandomizerPartId(element.id)">
-                <span class="randomizer-icon">🎲</span>
+                <div class="lib-drag-area" :class="{ 'lib-drag-handle': isMobile }">
+                  <span class="randomizer-icon">🎲</span>
+                </div>
                 <span class="library-part__label">{{ element.label }}</span>
                 <span class="library-part__tag library-part__tag--randomizer">RANDOM</span>
               </template>
               <template v-else>
-                <svg class="drag-icon" width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M9 3h2v2H9zm4 0h2v2h-2zM9 7h2v2H9zm4 0h2v2h-2zM9 11h2v2H9zm4 0h2v2h-2zM9 15h2v2H9zm4 0h2v2h-2zM9 19h2v2H9zm4 0h2v2h-2z"/>
-                </svg>
+                <div class="lib-drag-area" :class="{ 'lib-drag-handle': isMobile }">
+                  <svg class="drag-icon" width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M9 3h2v2H9zm4 0h2v2h-2zM9 7h2v2H9zm4 0h2v2h-2zM9 11h2v2H9zm4 0h2v2h-2zM9 15h2v2H9zm4 0h2v2h-2zM9 19h2v2H9zm4 0h2v2h-2z"/>
+                  </svg>
+                </div>
                 <span class="library-part__label">{{ element.label }}</span>
                 <span class="library-part__tag">{{ element.values.novelai }}</span>
               </template>
@@ -117,7 +133,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, nextTick } from 'vue'
+import { ref, computed, watch, nextTick, onMounted, onUnmounted } from 'vue'
 import { VueDraggable } from 'vue-draggable-plus'
 import { v4 as uuidv4 } from 'uuid'
 import { usePromptStore } from '../store/promptStore'
@@ -133,6 +149,18 @@ const emit = defineEmits<{
 
 const store = usePromptStore()
 const search = ref('')
+
+const isMobile = ref(false)
+function checkMobile() {
+  isMobile.value = window.innerWidth <= 768
+}
+onMounted(() => {
+  checkMobile()
+  window.addEventListener('resize', checkMobile)
+})
+onUnmounted(() => {
+  window.removeEventListener('resize', checkMobile)
+})
 
 const catParts = ref<Record<string, PromptPart[]>>({})
 
@@ -204,8 +232,13 @@ function toggleCategory(id: string): void {
 
 function onCategoryClick(id: string, event: MouseEvent): void {
   if (openCategories.value.has(id)) {
-    // すでに開いている → popup を出す（閉じない）
-    emit('select-category', id, event)
+    if (isMobile.value) {
+      // スマホ版： ポップアップと競合して閉じられなくなるため、アコーディオンを閉じる
+      toggleCategory(id)
+    } else {
+      // PC版：すでに開いている → popup を出す（閉じない）
+      emit('select-category', id, event)
+    }
   } else {
     // 閉じている → 開くだけ（popup なし）
     toggleCategory(id)
@@ -388,6 +421,19 @@ defineExpose({
   user-select: none;
 }
 
+.cat-drag-handle, .lib-drag-handle {
+  cursor: grab;
+}
+.cat-drag-handle:active, .lib-drag-handle:active {
+  cursor: grabbing;
+}
+
+.cat-drag-area, .lib-drag-area {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .category-header:hover {
   background: #1a2236;
 }
@@ -422,6 +468,26 @@ defineExpose({
 }
 
 .category-add-btn:hover {
+  background: #374151;
+  color: #d1d5db;
+  border-color: #6b7280;
+}
+
+.category-edit-btn-mobile {
+  display: none;
+  background: transparent;
+  border: 1px dashed #374151;
+  color: #6b7280;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  align-items: center;
+  justify-content: center;
+  margin-right: 8px;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.category-edit-btn-mobile:hover {
   background: #374151;
   color: #d1d5db;
   border-color: #6b7280;
@@ -544,10 +610,32 @@ defineExpose({
   letter-spacing: 0.05em;
 }
 @media (max-width: 768px) {
+  .cat-drag-area, .lib-drag-area {
+    position: relative;
+    padding: 0 4px;
+    margin-left: -4px;
+  }
+  .cat-drag-area::after, .lib-drag-area::after {
+    content: "";
+    position: absolute;
+    top: -10px;
+    bottom: -10px;
+    left: -10px;
+    right: -25px; /* extends drag area to ~1/8 width */
+  }
+
   .sidebar {
     width: 100%;
     min-width: 0;
     border-right: none;
+  }
+  
+  .add-btn-text {
+    display: none;
+  }
+  
+  .category-edit-btn-mobile {
+    display: flex;
   }
 }
 </style>
