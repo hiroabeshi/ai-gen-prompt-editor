@@ -164,4 +164,27 @@ const activeTab = ref<'dictionary' | 'manual'>('dictionary')
   min-height: 500px;
   max-height: 65vh;
 }
+
+@media (max-width: 768px) {
+  .modal-overlay {
+    padding: 8px;
+    align-items: flex-start;
+  }
+  .modal {
+    width: 100%;
+    margin-top: 8px;
+    max-height: calc(100vh - 60px); /* Leave room for mobile nav below */
+  }
+  .modal__body {
+    min-height: auto;
+    padding: 12px;
+  }
+  .tab-bar {
+    padding: 0 8px;
+  }
+  .tab-btn {
+    font-size: 0.7rem;
+    padding: 10px 8px;
+  }
+}
 </style>

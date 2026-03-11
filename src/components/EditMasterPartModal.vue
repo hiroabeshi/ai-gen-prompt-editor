@@ -1,6 +1,6 @@
 <template>
   <div class="transparent-overlay" @click.self="$emit('close')">
-    <div class="modal" :style="{ top: `${y}px`, left: `${x}px` }">
+    <div class="modal" ref="modalRef" :style="{ top: `${adjustedY}px`, left: `${adjustedX}px` }">
       <div class="modal__header">
         <span class="modal__title">マスターパーツ編集</span>
         <button class="icon-btn" @click="$emit('close')">
@@ -9,6 +9,22 @@
       </div>
 
       <div class="modal__body">
+        <!-- スロットに追加 -->
+        <label class="field-label">スロットに追加</label>
+        <div class="add-to-slot-group">
+          <select class="field-input add-to-slot-select" v-model="targetSlotId">
+            <option value="" disabled>追加先スロットを選択...</option>
+            <option v-for="slot in store.slots" :key="slot.id" :value="slot.id">
+              {{ slot.name }}
+            </option>
+          </select>
+          <button class="btn-primary" :disabled="!targetSlotId" @click="addToSlot">
+            追加
+          </button>
+        </div>
+
+        <div class="divider"></div>
+
         <label class="field-label">表示ラベル名</label>
         <AutocompleteInput
           v-model="editLabel"
@@ -60,7 +76,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, computed } from 'vue'
+import { ref, watch, computed, onMounted, nextTick } from 'vue'
 import { usePromptStore } from '../store/promptStore'
 import AutocompleteInput from './AutocompleteInput.vue'
 import { suggestByLabel, suggestByTag, type DictEntry } from '../utils/dictionaryService'
@@ -75,6 +91,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   close: []
   deleted: []
+  'added-to-slot': []
 }>()
 
 const store = usePromptStore()
@@ -84,6 +101,30 @@ const masterPart = computed(() => store.getMasterPart(props.partId) as PromptPar
 const editLabel = ref('')
 const editNovelai = ref('')
 const editCategoryId = ref('')
+
+const modalRef = ref<HTMLElement | null>(null)
+const adjustedX = ref(props.x)
+const adjustedY = ref(props.y)
+
+onMounted(() => {
+  nextTick(() => {
+    if (modalRef.value) {
+      const rect = modalRef.value.getBoundingClientRect()
+      let newX = props.x
+      let newY = props.y
+      
+      if (newX + rect.width > window.innerWidth) {
+        newX = window.innerWidth - rect.width - 16
+      }
+      if (newY + rect.height > window.innerHeight) {
+        newY = window.innerHeight - rect.height - 16
+      }
+      
+      adjustedX.value = Math.max(16, newX)
+      adjustedY.value = Math.max(16, newY)
+    }
+  })
+})
 
 watch(
   masterPart,
@@ -116,6 +157,15 @@ function onSuggestLabelSelect(entry: DictEntry): void {
 function onSuggestTagSelect(entry: DictEntry): void {
   editNovelai.value = entry.tag
   saveMaster()
+}
+
+const targetSlotId = ref('')
+
+function addToSlot(): void {
+  if (!masterPart.value || !targetSlotId.value) return
+  store.addPartToSlot(targetSlotId.value, masterPart.value.id)
+  emit('added-to-slot')
+  emit('close')
 }
 
 const showDeleteConfirm = ref(false)
@@ -296,5 +346,38 @@ function doDelete(): void {
 .confirm-actions {
   display: flex;
   gap: 8px;
+}
+
+.add-to-slot-group {
+  display: flex;
+  gap: 8px;
+}
+
+.add-to-slot-select {
+  flex: 1;
+}
+
+.btn-primary {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: #4f46e5;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 12px;
+  font-size: 0.82rem;
+  cursor: pointer;
+  justify-content: center;
+  transition: background 0.15s;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: #4338ca;
+}
+
+.btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 </style>

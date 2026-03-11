@@ -543,4 +543,11 @@ defineExpose({
   border-radius: 3px;
   letter-spacing: 0.05em;
 }
+@media (max-width: 768px) {
+  .sidebar {
+    width: 100%;
+    min-width: 0;
+    border-right: none;
+  }
+}
 </style>

@@ -1,6 +1,6 @@
 <template>
   <div class="transparent-overlay" @click.self="$emit('close')">
-    <div class="modal" :style="{ top: `${y}px`, left: `${x}px` }">
+    <div class="modal" ref="modalRef" :style="{ top: `${adjustedY}px`, left: `${adjustedX}px` }">
       <div class="modal__header">
         <span class="modal__title">カテゴリ編集</span>
         <button class="icon-btn" @click="$emit('close')">
@@ -50,7 +50,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, computed } from 'vue'
+import { ref, watch, computed, onMounted, nextTick } from 'vue'
 import { usePromptStore } from '../store/promptStore'
 
 const props = defineProps<{
@@ -70,6 +70,30 @@ const category = computed(() => store.categories.find(c => c.id === props.catego
 
 const editCategoryName = ref('')
 const editCategoryColor = ref('')
+
+const modalRef = ref<HTMLElement | null>(null)
+const adjustedX = ref(props.x)
+const adjustedY = ref(props.y)
+
+onMounted(() => {
+  nextTick(() => {
+    if (modalRef.value) {
+      const rect = modalRef.value.getBoundingClientRect()
+      let newX = props.x
+      let newY = props.y
+      
+      if (newX + rect.width > window.innerWidth) {
+        newX = window.innerWidth - rect.width - 16
+      }
+      if (newY + rect.height > window.innerHeight) {
+        newY = window.innerHeight - rect.height - 16
+      }
+      
+      adjustedX.value = Math.max(16, newX)
+      adjustedY.value = Math.max(16, newY)
+    }
+  })
+})
 
 watch(
   category,

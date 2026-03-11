@@ -12,24 +12,51 @@
       <nav class="app-header__nav">
         <button class="header-btn" title="使い方を見る" @click="showGuide = true">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75l-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H8c0-2.21 1.79-4 4-4s4 1.79 4 4c0 .88-.36 1.68-.93 2.25z"/></svg>
-          使い方
+          <span class="hide-on-mobile">使い方</span>
         </button>
 
         <a
           href="https://novelai.net/image"
           target="_blank"
           rel="noopener"
-          class="header-link"
+          class="header-link hide-on-mobile"
         >
           <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M19 19H5V5h7V3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z"/></svg>
           NovelAI を開く
         </a>
 
-        <button class="header-btn" title="未実装…" disabled>
+        <button class="header-btn hide-on-mobile" title="未実装…" disabled>
           <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M9.4 16.6L4.8 12l4.6-4.6L8 6l-6 6 6 6 1.4-1.4zm5.2 0l4.6-4.6-4.6-4.6L16 6l6 6-6 6-1.4-1.4z"/></svg>
           AIインポート
         </button>
         <input ref="aiImportInput" type="file" accept=".json" hidden @change="onAIImport" />
+
+        <!-- ＋モバイル用ドロップダウン -->
+        <div class="mobile-menu-container" v-if="isMobile">
+          <button class="header-btn" title="その他" @click="showMobileMenu = !showMobileMenu">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/>
+            </svg>
+          </button>
+          
+          <div v-if="showMobileMenu" class="mobile-dropdown-overlay" @click="showMobileMenu = false"></div>
+          <div v-if="showMobileMenu" class="mobile-dropdown">
+            <a
+              href="https://novelai.net/image"
+              target="_blank"
+              rel="noopener"
+              class="mobile-dropdown-item"
+              @click="showMobileMenu = false"
+            >
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" style="margin-right:6px"><path d="M19 19H5V5h7V3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z"/></svg>
+              NovelAI を開く
+            </a>
+            <button class="mobile-dropdown-item" disabled>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="margin-right:6px"><path d="M9.4 16.6L4.8 12l4.6-4.6L8 6l-6 6 6 6 1.4-1.4zm5.2 0l4.6-4.6-4.6-4.6L16 6l6 6-6 6-1.4-1.4z"/></svg>
+              AIインポート(未実装)
+            </button>
+          </div>
+        </div>
 
         <button class="header-btn header-btn--green" title="JSONを読み込む" @click="triggerImport">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M5 20h14v-2H5v2zm0-10h4v6h6v-6h4l-7-7-7 7z"/></svg>
@@ -44,10 +71,11 @@
       </nav>
     </header>
 
-    <!-- ─── ボディ (2カラム) ─── -->
+    <!-- ─── ボディ (2カラム / スマホ時はタブ切替) ─── -->
     <div class="app-body">
       <!-- 左: パーツ倉庫 -->
       <CategoryList
+        v-show="!isMobile || mobileTab === 'warehouse'"
         ref="categoryListRef"
         @open-add-part="openAddPartModal"
         @open-add-category="openAddCategoryModal"
@@ -56,7 +84,7 @@
       />
 
       <!-- センター: スロット一覧 (縦スクロール) -->
-      <main class="main-area">
+      <main v-show="!isMobile || mobileTab === 'slots'" class="main-area">
         <div class="slots-container">
           <PromptSlot
             v-for="slot in store.slots"
@@ -68,6 +96,7 @@
             @select-part="onSelectSlotPart"
             @edit-slot="onEditSlot"
             @copied="showToast('プロンプトをコピーしました！')"
+            @open-add-part="openAddPartToSlotModal"
           />
 
           <!-- スロット追加ボタン -->
@@ -79,6 +108,26 @@
       </main>
     </div>
 
+    <!-- モバイル用タブバー -->
+    <nav v-if="isMobile" class="mobile-nav">
+      <button 
+        class="mobile-nav-btn" 
+        :class="{ 'mobile-nav-btn--active': mobileTab === 'warehouse' }"
+        @click="mobileTab = 'warehouse'"
+      >
+        <span class="mobile-nav-icon">📦</span>
+        倉庫
+      </button>
+      <button 
+        class="mobile-nav-btn" 
+        :class="{ 'mobile-nav-btn--active': mobileTab === 'slots' }"
+        @click="mobileTab = 'slots'"
+      >
+        <span class="mobile-nav-icon">🎛️</span>
+        スロット
+      </button>
+    </nav>
+
     <!-- モーダル群 -->
     <AddPartModal
       v-if="showAddPart"
@@ -88,9 +137,22 @@
     />
     <AddSlotModal v-if="showAddSlot" @close="showAddSlot = false" @added="() => {}" />
     <AddCategoryModal v-if="showAddCategory" @close="showAddCategory = false" @added="() => {}" />
+    <AddPartToSlotModal
+      v-if="showAddPartToSlot"
+      :slot-id="addPartToSlotTargetId!"
+      @close="showAddPartToSlot = false"
+      @added="showToast('スロットにパーツを追加しました！')"
+    />
     <GuideModal v-if="showGuide" @close="showGuide = false" />
     <EditCategoryModal v-if="showEditCategory" :category-id="selectedCategoryId!" :x="modalX" :y="modalY" @close="closeEditCategory" @deleted="clearSelection" />
-    <EditMasterPartModal v-if="showEditMasterPart" :part-id="selectedMasterPartId!" :x="modalX" :y="modalY" @close="closeEditMasterPart" @deleted="clearSelection" />
+    <EditMasterPartModal 
+      v-if="showEditMasterPart" 
+      :part-id="selectedMasterPartId!" 
+      :x="modalX" :y="modalY" 
+      @close="closeEditMasterPart" 
+      @deleted="clearSelection" 
+      @added-to-slot="showToast('スロットにパーツを追加しました！')" 
+    />
     <PartEditor
       v-if="showPartEditor && editorMode"
       :mode="editorMode"
@@ -132,7 +194,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { usePromptStore } from './store/promptStore'
 import { exportToJSON, importFromJSON } from './utils/dataIO'
 import { parseAIImportFile, mergeAIImport, AI_IMPORT_SCHEMA_VERSION } from './utils/aiImport'
@@ -142,6 +204,7 @@ import PartEditor from './components/PartEditor.vue'
 import AddPartModal from './components/AddPartModal.vue'
 import AddSlotModal from './components/AddSlotModal.vue'
 import AddCategoryModal from './components/AddCategoryModal.vue'
+import AddPartToSlotModal from './components/AddPartToSlotModal.vue'
 import GuideModal from './components/GuideModal.vue'
 import EditCategoryModal from './components/EditCategoryModal.vue'
 import EditMasterPartModal from './components/EditMasterPartModal.vue'
@@ -151,10 +214,29 @@ const store = usePromptStore()
 
 const categoryListRef = ref<InstanceType<typeof CategoryList> | null>(null)
 
+// ─── モバイル対応 ────────────────────────────────────────────
+const isMobile = ref(false)
+const mobileTab = ref<'warehouse' | 'slots'>('slots')
+const showMobileMenu = ref(false)
+
+function checkMobile() {
+  isMobile.value = window.innerWidth <= 768
+}
+
+onMounted(() => {
+  checkMobile()
+  window.addEventListener('resize', checkMobile)
+})
+onUnmounted(() => {
+  window.removeEventListener('resize', checkMobile)
+})
+
 // ─── モーダル制御 ────────────────────────────────────────────
 const showAddPart = ref(false)
 const showAddSlot = ref(false)
 const showAddCategory = ref(false)
+const showAddPartToSlot = ref(false)
+const addPartToSlotTargetId = ref<string | null>(null)
 const showGuide = ref(false)
 const addPartCategoryId = ref<string | undefined>(undefined)
 
@@ -165,6 +247,11 @@ function openAddCategoryModal(): void {
 function openAddPartModal(categoryId?: string): void {
   addPartCategoryId.value = categoryId
   showAddPart.value = true
+}
+
+function openAddPartToSlotModal(slotId: string): void {
+  addPartToSlotTargetId.value = slotId
+  showAddPartToSlot.value = true
 }
 
 function closeAddPartModal(): void {
@@ -274,8 +361,12 @@ function removeSelectedFromSlot(): void {
 const importInput = ref<HTMLInputElement>()
 
 function onExport(): void {
-  exportToJSON(store.getFullState())
+  const result = exportToJSON(store.getFullState())
+  if (result.isIOS) {
+    showToast('iOSの場合は、開いた別タブで長押しをして保存してください', 5000)
+  }
 }
+
 
 function triggerImport(): void {
   importInput.value?.click()
@@ -380,10 +471,10 @@ const toastMsg = ref('')
 const errorMsg = ref('')
 let toastTimer: ReturnType<typeof setTimeout>
 
-function showToast(msg: string): void {
+function showToast(msg: string, duration: number = 2500): void {
   toastMsg.value = msg
   clearTimeout(toastTimer)
-  toastTimer = setTimeout(() => { toastMsg.value = '' }, 2500)
+  toastTimer = setTimeout(() => { toastMsg.value = '' }, duration)
 }
 
 function showError(msg: string): void {
@@ -596,6 +687,30 @@ body {
   line-height: 1.6;
 }
 
+@media (max-width: 768px) {
+  .app-header__title {
+    display: none; /* スマホではタイトルを隠す */
+  }
+  
+  .hide-on-mobile {
+    display: none !important;
+  }
+  
+  .header-btn {
+    padding: 6px 8px;
+    font-size: 0.75rem;
+  }
+  
+  .header-link {
+    padding: 6px 8px;
+    font-size: 0.75rem;
+  }
+
+  .slots-container {
+    padding-bottom: 80px; /* タブバーの高さ分 */
+  }
+}
+
 .sub-text {
   color: #6b7280;
   font-size: 0.8rem;
@@ -657,5 +772,92 @@ body {
   background: #450a0a;
   border-color: #7f1d1d;
   color: #f87171;
+}
+
+/* ─── モバイルナビ ─── */
+.mobile-nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 60px;
+  background: #0c0e1a;
+  border-top: 1px solid #1f2937;
+  display: flex;
+  z-index: 500;
+}
+
+.mobile-nav-btn {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  color: #6b7280;
+  font-size: 0.7rem;
+  font-weight: 600;
+  gap: 4px;
+  cursor: pointer;
+  transition: color 0.15s;
+}
+
+.mobile-nav-icon {
+  font-size: 1.2rem;
+}
+
+.mobile-nav-btn--active {
+  color: #a5b4fc;
+}
+
+/* ─── モバイル ヘッダードロップダウン ─── */
+.mobile-menu-container {
+  position: relative;
+}
+
+.mobile-dropdown-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1500;
+}
+
+.mobile-dropdown {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 12px;
+  background: #111827;
+  border: 1px solid #374151;
+  border-radius: 8px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+  display: flex;
+  flex-direction: column;
+  padding: 6px;
+  z-index: 2000;
+  min-width: 180px;
+}
+
+.mobile-dropdown-item {
+  display: flex;
+  align-items: center;
+  padding: 10px 12px;
+  color: #e5e7eb;
+  font-size: 0.85rem;
+  text-decoration: none;
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  text-align: left;
+}
+
+.mobile-dropdown-item:hover:not(:disabled) {
+  background: #1f2937;
+}
+
+.mobile-dropdown-item:disabled {
+  color: #6b7280;
+  cursor: not-allowed;
 }
 </style>
