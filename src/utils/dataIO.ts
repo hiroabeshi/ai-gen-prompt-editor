@@ -18,7 +18,7 @@ function isIOSSafari(): boolean {
 
 /**
  * AppState 全体を JSON ファイルとしてローカルにダウンロードする
- * iOS Safari の場合は別タブで開き、{ isIOS: true } を返す
+ * 端末・ブラウザ互換性の高い方法 (DOMへの一時追加と遅延revoke) を採用
  */
 export function exportToJSON(state: AppState): { isIOS: boolean } {
     const json = JSON.stringify(state, null, 2)
@@ -27,18 +27,22 @@ export function exportToJSON(state: AppState): { isIOS: boolean } {
     const now = new Date()
     const ts = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}_${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}`
 
-    if (isIOSSafari()) {
-        window.open(url, '_blank')
-        setTimeout(() => URL.revokeObjectURL(url), 5000)
-        return { isIOS: true }
-    }
-
     const a = document.createElement('a')
     a.href = url
     a.download = `prompt-edit-${ts}.json`
+    a.style.display = 'none'
+
+    // Firefox や iOS Safari などでダウンロードを発火させるための確実な方法
+    document.body.appendChild(a)
     a.click()
-    URL.revokeObjectURL(url)
-    return { isIOS: false }
+    document.body.removeChild(a)
+
+    // 一部のブラウザでファイルの生成・保存完了前にURLが破棄されるのを防ぐため、revoke は少し遅延させる
+    setTimeout(() => {
+        URL.revokeObjectURL(url)
+    }, 10000)
+
+    return { isIOS: isIOSSafari() }
 }
 
 // ============================================================
