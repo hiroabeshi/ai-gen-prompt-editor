@@ -25,11 +25,10 @@
           NovelAI を開く
         </a>
 
-        <button class="header-btn hide-on-mobile" title="未実装…" disabled>
+        <button class="header-btn hide-on-mobile" title="AIからプロンプト構成を取り込む" @click="showAIImport = true">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M9.4 16.6L4.8 12l4.6-4.6L8 6l-6 6 6 6 1.4-1.4zm5.2 0l4.6-4.6-4.6-4.6L16 6l6 6-6 6-1.4-1.4z"/></svg>
           AIインポート
         </button>
-        <input ref="aiImportInput" type="file" accept=".json" hidden @change="onAIImport" />
 
         <!-- ＋モバイル用ドロップダウン -->
         <div class="mobile-menu-container" v-if="isMobile">
@@ -51,9 +50,9 @@
               <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" style="margin-right:6px"><path d="M19 19H5V5h7V3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z"/></svg>
               NovelAI を開く
             </a>
-            <button class="mobile-dropdown-item" disabled>
+            <button class="mobile-dropdown-item" @click="showAIImport = true; showMobileMenu = false">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="margin-right:6px"><path d="M9.4 16.6L4.8 12l4.6-4.6L8 6l-6 6 6 6 1.4-1.4zm5.2 0l4.6-4.6-4.6-4.6L16 6l6 6-6 6-1.4-1.4z"/></svg>
-              AIインポート(未実装)
+              AIインポート
             </button>
           </div>
         </div>
@@ -144,6 +143,7 @@
       @added="showToast('スロットにパーツを追加しました！')"
     />
     <GuideModal v-if="showGuide" @close="showGuide = false" />
+    <AIImportModal v-if="showAIImport" @close="showAIImport = false" @imported="onAIImportSuccess" />
     <EditCategoryModal v-if="showEditCategory" :category-id="selectedCategoryId!" :x="modalX" :y="modalY" @close="closeEditCategory" @deleted="clearSelection" />
     <EditMasterPartModal 
       v-if="showEditMasterPart" 
@@ -166,20 +166,7 @@
       @deleted="clearSelection"
     />
 
-    <!-- AIインポート: 重複カテゴリ確認ダイアログ -->
-    <div v-if="aiConflictQueue.length > 0" class="modal-overlay" @click.self="resolveAllConflicts('add')">
-      <div class="confirm-dialog">
-        <div class="confirm-dialog__header">AIインポート: カテゴリ名の重複</div>
-        <div class="confirm-dialog__body">
-          <p>既存のカテゴリ <strong>「{{ aiConflictQueue[0] }}」</strong> と名前が重複しています。</p>
-          <p class="sub-text">どちらを選択しますか？</p>
-        </div>
-        <div class="confirm-dialog__footer">
-          <button class="btn-primary" @click="resolveConflict('merge')">既存にマージ（パーツを追加）</button>
-          <button class="btn-ghost" @click="resolveConflict('add')">別名で新規追加</button>
-        </div>
-      </div>
-    </div>
+
 
     <!-- トースト通知 -->
     <Transition name="toast">
@@ -197,7 +184,6 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { usePromptStore } from './store/promptStore'
 import { exportToJSON, importFromJSON } from './utils/dataIO'
-import { parseAIImportFile, mergeAIImport, AI_IMPORT_SCHEMA_VERSION } from './utils/aiImport'
 import CategoryList from './components/CategoryList.vue'
 import PromptSlot from './components/PromptSlot.vue'
 import PartEditor from './components/PartEditor.vue'
@@ -208,7 +194,8 @@ import AddPartToSlotModal from './components/AddPartToSlotModal.vue'
 import GuideModal from './components/GuideModal.vue'
 import EditCategoryModal from './components/EditCategoryModal.vue'
 import EditMasterPartModal from './components/EditMasterPartModal.vue'
-import type { SelectedPart, AIImportData } from './types'
+import AIImportModal from './components/AIImportModal.vue'
+import type { SelectedPart } from './types'
 
 const store = usePromptStore()
 
@@ -238,6 +225,7 @@ const showAddCategory = ref(false)
 const showAddPartToSlot = ref(false)
 const addPartToSlotTargetId = ref<string | null>(null)
 const showGuide = ref(false)
+const showAIImport = ref(false)
 const addPartCategoryId = ref<string | undefined>(undefined)
 
 function openAddCategoryModal(): void {
@@ -392,78 +380,9 @@ async function onImport(e: Event): Promise<void> {
 }
 
 // ─── AI インポート ────────────────────────────────────────────
-const aiImportInput = ref<HTMLInputElement>()
-const aiImportData = ref<AIImportData | null>(null)
-const aiConflictQueue = ref<string[]>([])
-const aiConflictResolutions = ref<Map<string, 'merge' | 'add'>>(new Map())
-
-// TODO: AI機能の本格実装時に有効化する
-// function triggerAIImport(): void {
-//   aiImportInput.value?.click()
-// }
-
-async function onAIImport(e: Event): Promise<void> {
-  const target = e.target as HTMLInputElement
-  const file = target.files?.[0]
-  if (!file) {
-    if (target) target.value = ''
-    return
-  }
-  try {
-    const data = await parseAIImportFile(file)
-    if (data.schemaVersion !== AI_IMPORT_SCHEMA_VERSION) {
-      showError(`スキーマバージョンが一致しません: ${data.schemaVersion}`)
-      return
-    }
-    aiImportData.value = data
-
-    // 重複チェック
-    const conflicts = data.categories
-      .filter(c => store.categories.some(ec => ec.name === c.name))
-      .map(c => c.name)
-
-    if (conflicts.length > 0) {
-      aiConflictQueue.value = [...new Set(conflicts)]
-      aiConflictResolutions.value = new Map()
-    } else {
-      doAIImport()
-    }
-  } catch (err) {
-    showError(String(err))
-  } finally {
-    target.value = ''
-  }
-}
-
-function resolveConflict(decision: 'merge' | 'add'): void {
-  const catName = aiConflictQueue.value[0]
-  aiConflictResolutions.value.set(catName, decision)
-  aiConflictQueue.value.shift()
-  if (aiConflictQueue.value.length === 0) {
-    doAIImport()
-  }
-}
-
-function resolveAllConflicts(decision: 'merge' | 'add'): void {
-  for (const name of aiConflictQueue.value) {
-    aiConflictResolutions.value.set(name, decision)
-  }
-  aiConflictQueue.value = []
-  doAIImport()
-}
-
-function doAIImport(): void {
-  if (!aiImportData.value) return
-  const { newCategories, newParts } = mergeAIImport(
-    aiImportData.value,
-    store.categories,
-    store.library,
-    (name) => aiConflictResolutions.value.get(name) ?? 'add',
-  )
-  store.mergeAIImportResult(newCategories, newParts)
-  showToast(`AIインポート完了: カテゴリ ${newCategories.length}個, パーツ ${newParts.length}個 追加`)
-  aiImportData.value = null
-  aiConflictResolutions.value = new Map()
+function onAIImportSuccess(msg: string): void {
+  showAIImport.value = false
+  showToast(msg, 5000)
 }
 
 // ─── トースト通知 ─────────────────────────────────────────────

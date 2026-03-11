@@ -49,13 +49,18 @@ export type AIImportPart = {
 
 export type AIImportCategory = {
     name: string;
-    color: string;
+    parts: AIImportPart[];
+}
+
+export type AIImportSlot = {
+    name: string;
+    type: 'positive' | 'negative';
     parts: AIImportPart[];
 }
 
 export type AIImportData = {
-    schemaVersion: string;
-    categories: AIImportCategory[];
+    library: AIImportCategory[];
+    slots: AIImportSlot[];
 }
 
 // ============================================================
