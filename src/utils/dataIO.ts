@@ -8,20 +8,37 @@ import {
     PART_ID_MIGRATION_MAP,
 } from '../data/migrations/v1_0_0'
 
+/** iOS Safari かどうかを判定する */
+function isIOSSafari(): boolean {
+    const ua = navigator.userAgent
+    const isIOS = /iphone|ipad|ipod/i.test(ua)
+    const isSafari = /safari/i.test(ua) && !/chrome|crios|fxios/i.test(ua)
+    return isIOS && isSafari
+}
+
 /**
  * AppState 全体を JSON ファイルとしてローカルにダウンロードする
+ * iOS Safari の場合は別タブで開き、{ isIOS: true } を返す
  */
-export function exportToJSON(state: AppState): void {
+export function exportToJSON(state: AppState): { isIOS: boolean } {
     const json = JSON.stringify(state, null, 2)
     const blob = new Blob([json], { type: 'application/json' })
     const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
     const now = new Date()
     const ts = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}_${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}`
+
+    if (isIOSSafari()) {
+        window.open(url, '_blank')
+        setTimeout(() => URL.revokeObjectURL(url), 5000)
+        return { isIOS: true }
+    }
+
+    const a = document.createElement('a')
+    a.href = url
     a.download = `prompt-edit-${ts}.json`
     a.click()
     URL.revokeObjectURL(url)
+    return { isIOS: false }
 }
 
 // ============================================================

@@ -41,7 +41,7 @@
           <div
             class="category-header"
             :style="{ borderLeftColor: cat.color }"
-            @click="onCategoryClick(cat.id)"
+            @click="onCategoryClick(cat.id, $event)"
           >
           <span class="category-color-dot" :style="{ background: cat.color }"></span>
           <span class="category-name">{{ cat.name }}</span>
@@ -74,10 +74,13 @@
               v-for="element in getPartsWithRandomizer(cat.id)"
               :key="element.id"
               class="library-part"
-              :class="{ 'library-part--randomizer': isRandomizerPartId(element.id) }"
+              :class="{
+                'library-part--randomizer': isRandomizerPartId(element.id),
+                'library-part--glow': glowingPartId === element.id
+              }"
               :data-part-id="element.id"
               :style="{ borderLeftColor: cat.color }"
-              @click="!isRandomizerPartId(element.id) && $emit('select-master', element.id)"
+              @click="!isRandomizerPartId(element.id) && $emit('select-master', element.id, $event)"
             >
               <template v-if="isRandomizerPartId(element.id)">
                 <span class="randomizer-icon">🎲</span>
@@ -114,7 +117,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, nextTick } from 'vue'
 import { VueDraggable } from 'vue-draggable-plus'
 import { v4 as uuidv4 } from 'uuid'
 import { usePromptStore } from '../store/promptStore'
@@ -124,8 +127,8 @@ import { DEFAULT_PART_WEIGHT, randomizerPartId, isRandomizerPartId } from '../ty
 const emit = defineEmits<{
   'open-add-part': [categoryId?: string]
   'open-add-category': []
-  'select-master': [partId: string]
-  'select-category': [categoryId: string]
+  'select-master': [partId: string, event: MouseEvent]
+  'select-category': [categoryId: string, event: MouseEvent]
 }>()
 
 const store = usePromptStore()
@@ -199,9 +202,14 @@ function toggleCategory(id: string): void {
   }
 }
 
-function onCategoryClick(id: string): void {
-  toggleCategory(id)
-  emit('select-category', id)
+function onCategoryClick(id: string, event: MouseEvent): void {
+  if (openCategories.value.has(id)) {
+    // すでに開いている → popup を出す（閉じない）
+    emit('select-category', id, event)
+  } else {
+    // 閉じている → 開くだけ（popup なし）
+    toggleCategory(id)
+  }
 }
 
 // vuedraggable の clone 用: SelectedPart の形に変換
@@ -213,6 +221,36 @@ function clonePart(part: PromptPart) {
     enabled: true,
   }
 }
+
+// 外部から特定パーツへフォーカスする（カテゴリを開き、スクロールして光らせる）
+const glowingPartId = ref<string | null>(null)
+
+function focusPart(partId: string): void {
+  const master = store.getMasterPart(partId)
+  if (master) {
+    openCategories.value.clear()
+    openCategories.value.add(master.categoryId)
+
+    glowingPartId.value = partId
+    setTimeout(() => {
+      if (glowingPartId.value === partId) {
+        glowingPartId.value = null
+      }
+    }, 1500)
+
+    // DOM更新後にスクロール
+    nextTick(() => {
+      const el = document.querySelector(`.library-part[data-part-id="${partId}"]`)
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      }
+    })
+  }
+}
+
+defineExpose({
+  focusPart
+})
 </script>
 
 <style scoped>
@@ -424,6 +462,16 @@ function clonePart(part: PromptPart) {
   cursor: grabbing;
 }
 
+.library-part--glow {
+  animation: glow-pulse 1.5s ease-out;
+}
+
+@keyframes glow-pulse {
+  0% { box-shadow: 0 0 0px #6366f1; background: #312e81; }
+  30% { box-shadow: 0 0 12px 2px #818cf8; background: #312e81; }
+  100% { box-shadow: 0 0 0px transparent; }
+}
+
 .drag-icon {
   color: #374151;
   flex-shrink: 0;
@@ -494,5 +542,12 @@ function clonePart(part: PromptPart) {
   padding: 1px 5px;
   border-radius: 3px;
   letter-spacing: 0.05em;
+}
+@media (max-width: 768px) {
+  .sidebar {
+    width: 100%;
+    min-width: 0;
+    border-right: none;
+  }
 }
 </style>

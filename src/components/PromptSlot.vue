@@ -4,7 +4,7 @@
     <div class="slot-header">
       <div
         class="slot-header__left"
-        @click="$emit('edit-slot', slot.id)"
+        @click="$emit('edit-slot', slot.id, $event)"
         title="スロットを編集"
         role="button"
         tabindex="0"
@@ -19,19 +19,19 @@
           <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
             <path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/>
           </svg>
-          プロンプトをコピー
+          <span class="btn-text">プロンプトをコピー</span>
         </button>
         <button class="icon-btn icon-btn--teal" @click="$emit('duplicate')">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
             <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/>
           </svg>
-          スロットを複製
+          <span class="btn-text">スロットを複製</span>
         </button>
         <button class="icon-btn icon-btn--danger" @click="confirmDelete">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
             <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
           </svg>
-          削除
+          <span class="btn-text">削除</span>
         </button>
       </div>
     </div>
@@ -71,7 +71,7 @@
           :key="element.id"
           :part="element"
           :is-selected="selectedInstanceId === element.id"
-          @select="$emit('select-part', slot.id, element.id)"
+          @select="(e) => $emit('select-part', slot.id, element.id, e)"
           @toggle="store.togglePart(slot.id, element.id)"
           @update-weight="store.setPartWeight(slot.id, element.id, $event)"
           @remove="removePart(element.id)"
@@ -85,6 +85,14 @@
         <span>ここにパーツをドラッグ</span>
       </div>
     </div>
+    
+    <!-- スロット下部パーツ追加ボタン -->
+    <button class="slot-add-part-btn" @click="$emit('open-add-part', slot.id)">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
+      </svg>
+      パーツを追加
+    </button>
   </div>
 </template>
 
@@ -104,9 +112,10 @@ const props = defineProps<{
 const emit = defineEmits<{
   delete: []
   duplicate: []
-  'select-part': [slotId: string, instanceId: string]
-  'edit-slot': [slotId: string]
+  'select-part': [slotId: string, instanceId: string, event: MouseEvent]
+  'edit-slot': [slotId: string, event: MouseEvent]
   copied: []
+  'open-add-part': [slotId: string]
 }>()
 
 const store = usePromptStore()
@@ -401,5 +410,36 @@ function removePart(instanceId: string) {
 .btn-ghost:hover {
   background: #1f2937;
   color: #d1d5db;
+}
+
+.slot-add-part-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px;
+  margin: 0 10px 10px 10px;
+  background: transparent;
+  border: 1px dashed #374151;
+  border-radius: 6px;
+  color: #9ca3af;
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.slot-add-part-btn:hover {
+  background: #1f2937;
+  color: #d1d5db;
+  border-color: #6b7280;
+}
+@media (max-width: 768px) {
+  .btn-text {
+    display: none;
+  }
+  
+  .icon-btn {
+    padding: 6px; /* アイコンのみなのでパディング調整 */
+  }
 }
 </style>
