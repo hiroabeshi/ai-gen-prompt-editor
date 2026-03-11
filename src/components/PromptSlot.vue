@@ -441,5 +441,9 @@ function removePart(instanceId: string) {
   .icon-btn {
     padding: 6px; /* アイコンのみなのでパディング調整 */
   }
+
+  .drop-zone-hint {
+    display: none;
+  }
 }
 </style>
