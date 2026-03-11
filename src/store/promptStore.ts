@@ -219,9 +219,10 @@ export const usePromptStore = defineStore('prompt', () => {
     }
 
     // ─── Actions: AI インポート ───────────────────────────────
-    function mergeAIImportResult(newCategories: Category[], newParts: PromptPart[]): void {
+    function mergeAIImportResult(newCategories: Category[], newParts: PromptPart[], newSlots: Slot[]): void {
         categories.value.push(...newCategories)
         library.value.push(...newParts)
+        slots.value.push(...newSlots)
     }
 
     return {
