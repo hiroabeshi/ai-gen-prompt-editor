@@ -13,8 +13,8 @@
         <p class="guide-text">このアプリは、NovelAI用のプロンプトを視覚的に組み立て・管理するためのツールです。</p>
 
         <div class="alpha-warning">
-          <strong>⚠️ アルファ版について</strong><br>
-          現在このツールはアルファ版（開発初期段階）です。予期せぬ不具合が発生する可能性があります。あらかじめご了承ください。
+          <strong>⚠️ ベータ版について</strong><br>
+          現在このツールはベータ版です。予期せぬ不具合が発生する可能性があります。あらかじめご了承ください。
         </div>
 
         <div class="guide-step">
@@ -70,6 +70,7 @@
             <li><strong>ver 0.2:</strong> ランダマイザ実装</li>
             <li><strong>ver 0.3:</strong> カテゴリ強化、1.0.0データ移行実装</li>
             <li><strong>ver 0.4:</strong> Danbooru 人気順からのタグ検索・自動翻訳サジェスト機能を追加</li>
+            <li><strong>ver 0.5:</strong> AIインポート機能・スマ対応応</li>
           </ul>
         </div>
       </div>
