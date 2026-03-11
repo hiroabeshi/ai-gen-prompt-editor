@@ -140,7 +140,7 @@ import { usePromptStore } from '../store/promptStore'
 import type { PromptPart } from '../types'
 import { DEFAULT_PART_WEIGHT, randomizerPartId, isRandomizerPartId } from '../types'
 
-const emit = defineEmits<{
+defineEmits<{
   'open-add-part': [categoryId?: string]
   'open-add-category': []
   'select-master': [partId: string, event: MouseEvent]
