@@ -10,12 +10,14 @@
     :style="{ borderLeftColor: categoryColor }"
     @click="$emit('select', $event)"
   >
-    <!-- 左側全体をドラッグハンドルにする -->
-    <div class="part-left-side drag-handle" title="ドラッグして並び替え">
-      <div class="drag-icon">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-          <path d="M9 3h2v2H9zm4 0h2v2h-2zM9 7h2v2H9zm4 0h2v2h-2zM9 11h2v2H9zm4 0h2v2h-2zM9 15h2v2H9zm4 0h2v2h-2zM9 19h2v2H9zm4 0h2v2h-2z"/>
-        </svg>
+    <!-- 左側全体をドラッグハンドルにする (PC) / 左端のみにする (スマホ) -->
+    <div class="part-left-side" :class="{ 'drag-handle': !isMobile }" title="ドラッグして並び替え">
+      <div class="part-drag-area" :class="{ 'drag-handle': isMobile }">
+        <div class="drag-icon">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M9 3h2v2H9zm4 0h2v2h-2zM9 7h2v2H9zm4 0h2v2h-2zM9 11h2v2H9zm4 0h2v2h-2zM9 15h2v2H9zm4 0h2v2h-2zM9 19h2v2H9zm4 0h2v2h-2z"/>
+          </svg>
+        </div>
       </div>
 
       <!-- チェックボックス (ON/OFF) -->
@@ -77,7 +79,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref, onMounted, onUnmounted } from 'vue'
 import { usePromptStore } from '../store/promptStore'
 import type { SelectedPart } from '../types'
 import { isRandomizerPartId } from '../types'
@@ -100,6 +102,18 @@ function onWeightInput(e: Event) {
 }
 
 const store = usePromptStore()
+
+const isMobile = ref(false)
+function checkMobile() {
+  isMobile.value = window.innerWidth <= 768
+}
+onMounted(() => {
+  checkMobile()
+  window.addEventListener('resize', checkMobile)
+})
+onUnmounted(() => {
+  window.removeEventListener('resize', checkMobile)
+})
 
 const isRandomizer = computed(() => isRandomizerPartId(props.part.partId))
 
@@ -146,17 +160,42 @@ const displayWeight = computed(() => {
   opacity: 0.45;
 }
 
-.drag-handle {
+.part-left-side {
   display: flex;
   align-items: center;
   gap: 6px;
   flex: 1;
   min-width: 0;
+}
+
+.drag-handle {
   cursor: grab;
 }
 
 .drag-handle:active {
   cursor: grabbing;
+}
+
+.part-drag-area {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@media (max-width: 768px) {
+  .part-drag-area {
+    position: relative;
+    padding: 4px;
+    margin-left: -4px;
+  }
+  .part-drag-area::after {
+    content: "";
+    position: absolute;
+    top: -10px;
+    bottom: -10px;
+    left: -10px;
+    right: -25px; /* extends drag area to ~1/8 width */
+  }
 }
 
 .drag-icon {
