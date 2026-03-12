@@ -618,6 +618,10 @@ defineExpose({
     border-right: none;
   }
   
+  .category-list {
+    padding-bottom: 80px;
+  }
+  
   .add-btn-text {
     display: none;
   }
