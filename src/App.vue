@@ -755,6 +755,7 @@ body {
   padding: 6px;
   z-index: 2000;
   min-width: 180px;
+  max-width: calc(100vw - 32px);
 }
 
 .mobile-dropdown-item {
