@@ -414,10 +414,10 @@ function submit(): void {
   }
 
   .dict-categories__list {
-    max-height: none; /* 2重スクロールを避けるため制限を解除 */
-    border-top: none;
+    max-height: 160px; /* カテゴリはスクロール可能に */
+    border-top: 1px solid #1f2937;
     display: block;
-    overflow-y: visible; /* モーダル全体のスクロールに任せる */
+    overflow-y: auto;
   }
 
   .dict-tags__header {
@@ -425,22 +425,27 @@ function submit(): void {
   }
 
   .dict-tags {
-    min-height: 200px;
+    min-height: 150px;
   }
 
   .dict-tab {
-    height: auto;
-    overflow: visible;
+    height: 100%;
+    overflow: hidden;
   }
 
   .dict-layout {
-    overflow: visible; /* 子要素が見切れるのを防ぐ */
-    border: none;
+    overflow: hidden;
+    border: 1px solid #1f2937;
+    border-radius: 8px;
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
   }
 
   .dict-tags__list {
-    max-height: none; /* 2重スクロールを避けるため制限を解除 */
-    overflow-y: visible;
+    max-height: 280px; /* タグリストもスクロール可能に */
+    overflow-y: auto;
   }
 }
 

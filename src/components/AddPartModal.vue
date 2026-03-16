@@ -167,22 +167,26 @@ const activeTab = ref<'dictionary' | 'manual'>('dictionary')
 
 @media (max-width: 768px) {
   .modal-overlay {
-    padding: 24px 8px; /* 上部に十分な余白を確保して見切れを防止 */
-    align-items: flex-start;
-    overflow-y: auto;
-    display: block; /* Flexでの見切れ問題を避けるためブロック表示に */
+    padding: 12px 8px;
+    display: flex;
+    align-items: center; /* 中央に配置して見切れを防止 */
+    justify-content: center;
+    overflow: hidden;
   }
   .modal {
     width: 100%;
-    margin: 0 auto 24px; /* 上下の余白 */
+    margin: 0;
     height: auto;
-    max-height: none;
+    max-height: 92dvh; /* 画面高さを超えないように制限 */
+    display: flex;
+    flex-direction: column;
   }
   .modal__body {
-    min-height: auto;
+    min-height: 0;
     max-height: none;
     padding: 12px;
-    overflow-y: visible;
+    overflow-y: auto; /* ボディ内でスクロール */
+    flex: 1;
   }
   .tab-bar {
     padding: 0 8px;
