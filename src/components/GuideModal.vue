@@ -70,7 +70,7 @@
             <li><strong>ver 0.2:</strong> ランダマイザ実装</li>
             <li><strong>ver 0.3:</strong> カテゴリ強化、1.0.0データ移行実装</li>
             <li><strong>ver 0.4:</strong> Danbooru 人気順からのタグ検索・自動翻訳サジェスト機能を追加</li>
-            <li><strong>ver 0.5:</strong> AIインポート機能・スマ対応応</li>
+            <li><strong>ver 0.5:</strong> AIインポート機能・スマホ対応</li>
           </ul>
         </div>
       </div>
