@@ -744,8 +744,8 @@ body {
 .mobile-dropdown {
   position: absolute;
   top: 100%;
-  right: 0;
-  left: auto;
+  left: 0;
+  right: auto;
   margin-top: 12px;
   background: #111827;
   border: 1px solid #374151;
