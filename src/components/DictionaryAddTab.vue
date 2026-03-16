@@ -2,9 +2,24 @@
   <div class="dict-tab">
     <div class="dict-layout">
       <!-- 左ペイン: カテゴリリスト -->
-      <div class="dict-categories">
-        <div class="dict-categories__header">カテゴリ</div>
-        <ul class="dict-categories__list">
+      <div class="dict-categories" :class="{ 'dict-categories--expanded': isCategoryExpanded }">
+        <div class="dict-categories__header" @click="toggleCategories">
+          <span class="dict-categories__title">
+            カテゴリ
+            <span v-if="isMobileView && selectedCategoryName" class="dict-categories__selected-hint">
+              : {{ selectedCategoryName }}
+            </span>
+          </span>
+          <svg
+            v-if="isMobileView"
+            class="dict-categories__toggle-icon"
+            :class="{ 'dict-categories__toggle-icon--active': isCategoryExpanded }"
+            width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"
+          >
+            <polyline points="6 9 12 15 18 9"></polyline>
+          </svg>
+        </div>
+        <ul v-if="!isMobileView || isCategoryExpanded" class="dict-categories__list">
           <li
             v-for="(catName, idx) in dictCategories"
             :key="idx"
@@ -113,7 +128,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed } from 'vue'
+import { ref, reactive, computed, onMounted, onUnmounted } from 'vue'
 import { usePromptStore } from '../store/promptStore'
 import {
   dictCategories,
@@ -141,6 +156,34 @@ const selectedCatIdx = ref(-1)
 const currentPage = ref(1)
 const selectedEntry = ref<DictEntry | null>(null)
 const tagQuery = ref('')
+
+// ─── モバイル・アコーディオン制御 ──────────────────────────
+const isMobileView = ref(false)
+const isCategoryExpanded = ref(false)
+
+function checkMobile() {
+  isMobileView.value = window.innerWidth <= 640
+}
+
+onMounted(() => {
+  checkMobile()
+  window.addEventListener('resize', checkMobile)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('resize', checkMobile)
+})
+
+const selectedCategoryName = computed(() => {
+  if (selectedCatIdx.value < 0) return ''
+  return dictCategories[selectedCatIdx.value]
+})
+
+function toggleCategories() {
+  if (isMobileView.value) {
+    isCategoryExpanded.value = !isCategoryExpanded.value
+  }
+}
 
 const form = reactive({
   categoryId: props.initialCategoryId || (store.categories[0]?.id ?? ''),
@@ -185,6 +228,10 @@ function selectCategory(idx: number): void {
   currentPage.value = 1
   selectedEntry.value = null
   tagQuery.value = ''
+  
+  if (isMobileView.value) {
+    isCategoryExpanded.value = false
+  }
 }
 
 function changePage(page: number): void {
@@ -306,6 +353,57 @@ function submit(): void {
   color: #4b5563;
   flex-shrink: 0;
   margin-left: 4px;
+}
+
+/* モバイル向けスタイル調整 */
+@media (max-width: 640px) {
+  .dict-layout {
+    flex-direction: column;
+  }
+
+  .dict-categories {
+    width: 100% !important;
+    border-right: none;
+    border-bottom: 1px solid #1f2937;
+  }
+
+  .dict-categories__header {
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 14px;
+    background: #111827;
+    user-select: none;
+  }
+
+  .dict-categories__header:hover {
+    background: #1f2937;
+  }
+
+  .dict-categories__selected-hint {
+    color: #6366f1;
+    font-weight: 600;
+  }
+
+  .dict-categories__toggle-icon {
+    transition: transform 0.2s ease;
+    color: #4b5563;
+  }
+
+  .dict-categories__toggle-icon--active {
+    transform: rotate(180deg);
+    color: #6366f1;
+  }
+
+  .dict-categories__list {
+    max-height: 240px;
+    border-top: 1px solid #1f2937;
+  }
+
+  .dict-tags {
+    min-height: 300px;
+  }
 }
 
 /* 右ペイン: タグ一覧 */
