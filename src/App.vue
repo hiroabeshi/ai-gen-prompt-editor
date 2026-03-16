@@ -745,6 +745,7 @@ body {
   position: absolute;
   top: 100%;
   right: 0;
+  left: auto;
   margin-top: 12px;
   background: #111827;
   border: 1px solid #374151;
