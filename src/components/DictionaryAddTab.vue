@@ -162,7 +162,7 @@ const isMobileView = ref(false)
 const isCategoryExpanded = ref(false)
 
 function checkMobile() {
-  isMobileView.value = window.innerWidth <= 640
+  isMobileView.value = window.innerWidth <= 768
 }
 
 onMounted(() => {
@@ -330,6 +330,7 @@ function submit(): void {
   color: #9ca3af;
   transition: background 0.1s, color 0.1s;
   border-bottom: 1px solid transparent;
+  min-width: 0; /* 子供の省略を有効にする */
 }
 
 .dict-cat-item:hover {
@@ -357,7 +358,7 @@ function submit(): void {
 }
 
 /* モバイル向けスタイル調整 */
-@media (max-width: 640px) {
+@media (max-width: 768px) {
   .dict-layout {
     flex-direction: column;
   }
@@ -376,6 +377,17 @@ function submit(): void {
     padding: 12px 14px;
     background: #111827;
     user-select: none;
+    min-width: 0; /* 子供の省略を有効にするため */
+  }
+
+  .dict-categories__title {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
   }
 
   .dict-categories__header:hover {
@@ -385,6 +397,9 @@ function submit(): void {
   .dict-categories__selected-hint {
     color: #6366f1;
     font-weight: 600;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .dict-categories__toggle-icon {
@@ -407,7 +422,7 @@ function submit(): void {
   }
 
   .dict-tags {
-    min-height: 0;
+    min-height: 200px; /* 切り替え時のガタつき防止 */
   }
 
   .dict-tab {
