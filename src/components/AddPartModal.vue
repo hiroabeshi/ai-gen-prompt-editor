@@ -167,16 +167,16 @@ const activeTab = ref<'dictionary' | 'manual'>('dictionary')
 
 @media (max-width: 768px) {
   .modal-overlay {
-    padding: 8px;
+    padding: 24px 8px; /* 上部に十分な余白を確保して見切れを防止 */
     align-items: flex-start;
     overflow-y: auto;
+    display: block; /* Flexでの見切れ問題を避けるためブロック表示に */
   }
   .modal {
     width: 100%;
-    margin-top: 8px;
+    margin: 0 auto 24px; /* 上下の余白 */
     height: auto;
     max-height: none;
-    margin-bottom: 20px; /* 余白 */
   }
   .modal__body {
     min-height: auto;

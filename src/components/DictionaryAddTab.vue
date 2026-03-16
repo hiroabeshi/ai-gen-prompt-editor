@@ -220,7 +220,8 @@ const pageResult = computed<PageResult>(() => {
   if (selectedCatIdx.value < 0) {
     return { entries: [], totalCount: 0, page: 1, pageSize: 100, totalPages: 1 }
   }
-  return getTagsByCategory(selectedCatIdx.value, currentPage.value, 100, tagQuery.value)
+  const pageSize = isMobileView.value ? 30 : 100
+  return getTagsByCategory(selectedCatIdx.value, currentPage.value, pageSize, tagQuery.value)
 })
 
 function selectCategory(idx: number): void {
@@ -397,7 +398,7 @@ function submit(): void {
   }
 
   .dict-categories__list {
-    max-height: 240px;
+    max-height: 140px;
     border-top: 1px solid #1f2937;
   }
 
@@ -406,7 +407,7 @@ function submit(): void {
   }
 
   .dict-tags {
-    min-height: 300px;
+    min-height: 0;
   }
 
   .dict-tab {
@@ -414,7 +415,8 @@ function submit(): void {
   }
 
   .dict-tags__list {
-    overflow-y: visible;
+    max-height: 320px;
+    overflow-y: auto;
   }
 }
 
