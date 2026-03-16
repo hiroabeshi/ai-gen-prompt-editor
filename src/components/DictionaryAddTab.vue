@@ -401,8 +401,20 @@ function submit(): void {
     border-top: 1px solid #1f2937;
   }
 
+  .dict-tags__header {
+    display: none;
+  }
+
   .dict-tags {
     min-height: 300px;
+  }
+
+  .dict-tab {
+    height: auto;
+  }
+
+  .dict-tags__list {
+    overflow-y: visible;
   }
 }
 

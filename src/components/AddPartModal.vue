@@ -169,15 +169,20 @@ const activeTab = ref<'dictionary' | 'manual'>('dictionary')
   .modal-overlay {
     padding: 8px;
     align-items: flex-start;
+    overflow-y: auto;
   }
   .modal {
     width: 100%;
     margin-top: 8px;
-    max-height: calc(100vh - 60px); /* Leave room for mobile nav below */
+    height: auto;
+    max-height: none;
+    margin-bottom: 20px; /* 余白 */
   }
   .modal__body {
     min-height: auto;
+    max-height: none;
     padding: 12px;
+    overflow-y: visible;
   }
   .tab-bar {
     padding: 0 8px;
