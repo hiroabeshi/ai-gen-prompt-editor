@@ -25,6 +25,11 @@
           NovelAI を開く
         </a>
 
+        <button class="header-btn hide-on-mobile" title="PNG画像からプロンプトを取り込む" @click="showPNGImport = true">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg>
+          PNGインポート
+        </button>
+
         <button class="header-btn hide-on-mobile" title="AIからプロンプト構成を取り込む" @click="showAIImport = true">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M9.4 16.6L4.8 12l4.6-4.6L8 6l-6 6 6 6 1.4-1.4zm5.2 0l4.6-4.6-4.6-4.6L16 6l6 6-6 6-1.4-1.4z"/></svg>
           AIインポート
@@ -50,6 +55,10 @@
               <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" style="margin-right:6px"><path d="M19 19H5V5h7V3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z"/></svg>
               NovelAI を開く
             </a>
+            <button class="mobile-dropdown-item" @click="showPNGImport = true; showMobileMenu = false">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="margin-right:6px"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg>
+              PNGインポート
+            </button>
             <button class="mobile-dropdown-item" @click="showAIImport = true; showMobileMenu = false">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="margin-right:6px"><path d="M9.4 16.6L4.8 12l4.6-4.6L8 6l-6 6 6 6 1.4-1.4zm5.2 0l4.6-4.6-4.6-4.6L16 6l6 6-6 6-1.4-1.4z"/></svg>
               AIインポート
@@ -144,6 +153,7 @@
     />
     <GuideModal v-if="showGuide" @close="showGuide = false" />
     <AIImportModal v-if="showAIImport" @close="showAIImport = false" @imported="onAIImportSuccess" />
+    <PNGImportModal v-if="showPNGImport" @close="showPNGImport = false" />
     <EditCategoryModal v-if="showEditCategory" :category-id="selectedCategoryId!" :x="modalX" :y="modalY" @close="closeEditCategory" @deleted="clearSelection" />
     <EditMasterPartModal 
       v-if="showEditMasterPart" 
@@ -195,6 +205,7 @@ import GuideModal from './components/GuideModal.vue'
 import EditCategoryModal from './components/EditCategoryModal.vue'
 import EditMasterPartModal from './components/EditMasterPartModal.vue'
 import AIImportModal from './components/AIImportModal.vue'
+import PNGImportModal from './components/PNGImportModal.vue'
 import type { SelectedPart } from './types'
 
 const store = usePromptStore()
@@ -226,6 +237,7 @@ const showAddPartToSlot = ref(false)
 const addPartToSlotTargetId = ref<string | null>(null)
 const showGuide = ref(false)
 const showAIImport = ref(false)
+const showPNGImport = ref(false)
 const addPartCategoryId = ref<string | undefined>(undefined)
 
 function openAddCategoryModal(): void {
