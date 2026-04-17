@@ -1,0 +1,30 @@
+{
+  "name": "prompt-edit",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vue-tsc -b && vite build",
+    "preview": "vite preview",
+    "kill": "npx kill-port 5173"
+  },
+  "dependencies": {
+    "@google/generative-ai": "^0.24.1",
+    "dotenv": "^17.3.1",
+    "pinia": "^2.2.8",
+    "uuid": "^11.1.0",
+    "vue": "^3.5.13",
+    "vue-draggable-plus": "^0.6.1"
+  },
+  "devDependencies": {
+    "@types/node": "^25.3.5",
+    "@unocss/reset": "^0.65.3",
+    "@vitejs/plugin-vue": "^5.2.1",
+    "tsx": "^4.21.0",
+    "typescript": "^5.7.3",
+    "unocss": "^0.65.3",
+    "vite": "^6.2.0",
+    "vue-tsc": "^2.2.2"
+  }
+}

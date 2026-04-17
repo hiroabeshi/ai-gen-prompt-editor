@@ -1,0 +1,127 @@
+{
+  "version": "1.0.0",
+  "categories": [
+    {
+      "id": "cat_quality",
+      "name": "品質",
+      "color": "#6366F1"
+    },
+    {
+      "id": "cat_pose",
+      "name": "体勢",
+      "color": "#F59E0B"
+    },
+    {
+      "id": "cat_outfit",
+      "name": "服装",
+      "color": "#EC4899"
+    }
+  ],
+  "library": [
+    {
+      "id": "mp_q1",
+      "categoryId": "cat_quality",
+      "label": "最高品質",
+      "values": {
+        "novelai": "masterpiece, best quality"
+      }
+    },
+    {
+      "id": "mp_q2",
+      "categoryId": "cat_quality",
+      "label": "高解像度",
+      "values": {
+        "novelai": "highres, ultra-detailed"
+      }
+    },
+    {
+      "id": "mp_q3",
+      "categoryId": "cat_quality",
+      "label": "美麗な絵",
+      "values": {
+        "novelai": "beautiful, aesthetic"
+      }
+    },
+    {
+      "id": "mp_pose1",
+      "categoryId": "cat_pose",
+      "label": "仰向け",
+      "values": {
+        "novelai": "lying, on back"
+      }
+    },
+    {
+      "id": "mp_pose2",
+      "categoryId": "cat_pose",
+      "label": "うつ伏せ",
+      "values": {
+        "novelai": "lying, on stomach"
+      }
+    },
+    {
+      "id": "mp_pose3",
+      "categoryId": "cat_pose",
+      "label": "立ち姿",
+      "values": {
+        "novelai": "standing"
+      }
+    },
+    {
+      "id": "mp_o1",
+      "categoryId": "cat_outfit",
+      "label": "セーラー服",
+      "values": {
+        "novelai": "school uniform, sailor collar"
+      }
+    },
+    {
+      "id": "mp_o2",
+      "categoryId": "cat_outfit",
+      "label": "ワンピース",
+      "values": {
+        "novelai": "sundress"
+      }
+    },
+    {
+      "id": "mp_o3",
+      "categoryId": "cat_outfit",
+      "label": "ニット",
+      "values": {
+        "novelai": "sweater, knit"
+      }
+    }
+  ],
+  "slots": [
+    {
+      "id": "slot_base",
+      "name": "Base（共通ポジティブ）",
+      "type": "positive",
+      "parts": [
+        {
+          "id": "inst_1",
+          "partId": "mp_q1",
+          "weight": 1,
+          "enabled": true
+        },
+        {
+          "id": "inst_2",
+          "partId": "mp_q2",
+          "weight": 1,
+          "enabled": true
+        },
+        {
+          "id": "inst_3",
+          "partId": "mp_pose3",
+          "weight": 1,
+          "enabled": true
+        }
+      ]
+    },
+    {
+      "id": "slot_base_neg",
+      "name": "Base_Negative（共通除外）",
+      "type": "negative",
+      "parts": []
+    }
+  ]
+}
