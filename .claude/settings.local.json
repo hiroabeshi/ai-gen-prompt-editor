@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(xargs ls *)",
+      "WebSearch",
+      "WebFetch(domain:civitai.com)",
+      "WebFetch(domain:www.comfy.org)"
+    ]
+  }
+}
