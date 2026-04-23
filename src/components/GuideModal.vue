@@ -10,7 +10,10 @@
         </button>
       </div>
       <div class="guide-modal__body">
-        <p class="guide-text">このアプリは、NovelAI用のプロンプトを視覚的に組み立て・管理するためのツールです。</p>
+        <p class="guide-text">
+          このアプリは、<strong>Anima モデル</strong>向けのプロンプトを視覚的に組み立て・管理するためのツールです。<br>
+          ComfyUI 標準の <code>(tag:1.2)</code> 記法で出力されます。
+        </p>
 
         <div class="alpha-warning">
           <strong>⚠️ ベータ版について</strong><br>
@@ -19,35 +22,61 @@
 
         <div class="guide-step">
           <h3 class="guide-step__title">1. パーツを選ぶ</h3>
-          <p class="guide-text">画面左側のライブラリには、ポーズや服装などのカテゴリごとにプロンプトのパーツが用意されています。<br>使いたいパーツを、中央の枠（スロット）にドラッグ＆ドロップして追加してください。</p>
+          <p class="guide-text">
+            画面左側のライブラリには、カテゴリごとにプロンプトのパーツが用意されています。<br>
+            使いたいパーツを、中央の <strong>ポジティブ / ネガティブ</strong> 枠にドラッグ＆ドロップして追加してください。
+          </p>
         </div>
 
         <div class="guide-step">
-          <h3 class="guide-step__title">2. プロンプトを調整する</h3>
-          <p class="guide-text">スロットに追加したパーツは、クリックして強弱（ウェイト）を調整できます。<br>スロット内でドラッグして順番を入れ替えることも可能です。</p>
+          <h3 class="guide-step__title">2. セクション構成で整理する</h3>
+          <p class="guide-text">
+            各スロットは <strong>品質 / 人数 / キャラクター / シリーズ / アーティスト / その他</strong> の 6 セクションに分かれています。<br>
+            パーツはカテゴリに応じて自動でセクションへ振り分けられ、セクション間のドラッグで並べ替えもできます。
+          </p>
         </div>
 
         <div class="guide-step">
-          <h3 class="guide-step__title">3. コピーして NovelAI で使う</h3>
-          <p class="guide-text">プロンプトが完成したら、各スロットの上にある「コピー」ボタンを押します。<br>あとは NovelAI の画面を開き、プロンプト入力欄にそのまま貼り付けて画像を生成してください。</p>
+          <h3 class="guide-step__title">3. メタ情報を設定する（ポジティブのみ）</h3>
+          <p class="guide-text">
+            ポジティブスロット上部の <strong>レーティング</strong> (safe / sensitive / nsfw / explicit) と
+            <strong>データセットタグ</strong> (deviantart / ye-pop) を選択すると、<br>
+            出力プロンプトの先頭に自動で挿入されます。
+          </p>
         </div>
 
         <div class="guide-step">
-          <h3 class="guide-step__title">4. データを保存する（最重要）</h3>
-          <p class="guide-text">画面右上の「JSON保存」ボタンから、現在のプロンプトやパーツの状態をJSONファイルとしてパソコンに保存（バックアップ）できます。</p>
+          <h3 class="guide-step__title">4. 強度とウェイトの調整</h3>
+          <p class="guide-text">
+            追加したパーツはクリックして選択し、もう一度クリックでポップアップからウェイトを調整できます。<br>
+            出力時は <code>(tag:1.20)</code> のような ComfyUI 記法になります。
+          </p>
         </div>
 
         <div class="guide-step">
-          <h3 class="guide-step__title">5. データを読み込む</h3>
-          <p class="guide-text">画面右上の「JSON読込」ボタンから、保存したJSONファイルを読み込んで前回の状態を復元できます。</p>
+          <h3 class="guide-step__title">5. コピーして ComfyUI で使う</h3>
+          <p class="guide-text">
+            プロンプトが完成したら、各スロットの「プロンプトをコピー」ボタンを押します。<br>
+            ComfyUI の Anima モデル用 CLIPTextEncode ノードにそのまま貼り付けてください。
+          </p>
+        </div>
+
+        <div class="guide-step">
+          <h3 class="guide-step__title">6. データの保存と読み込み</h3>
+          <p class="guide-text">
+            画面右上の「JSON を保存する」/「JSON を読み込む」ボタンで、<br>
+            現在のライブラリ・スロット状態を JSON ファイルにバックアップ / 復元できます。
+          </p>
         </div>
 
         <div class="guide-tips">
           <h3 class="guide-tips__title">💡 その他の便利な機能</h3>
           <ul class="guide-tips__list">
-            <li><strong>自作パーツの登録:</strong> 各カテゴリの「＋」ボタンから、お気に入りのタグを新規登録できます。</li>
-            <li><strong>スロットの追加:</strong> 「新しいスロットを追加」ボタンから、新しいスロットを作成できます。<br>
-            <strong>キャラクターに関しては、１スロット１キャラクターとすることをお勧めします</strong>。</li>
+            <li><strong>自作パーツの登録:</strong> 各カテゴリの「パーツを追加」ボタンから、お気に入りのタグを新規登録できます。</li>
+            <li><strong>自由記述欄:</strong> 各スロット下部のテキストエリアに、セクションに収まらない自然言語プロンプトを追記できます。</li>
+            <li><strong>アーティストタグ:</strong> artist セクションに入れたタグは出力時に自動で <code>@</code> が付与されます。</li>
+            <li><strong>AIインポート:</strong> ChatGPT などで生成したプロンプト構成 JSON を直接取り込めます。</li>
+            <li><strong>PNG取込:</strong> ComfyUI で生成した PNG 画像からプロンプト情報（ポジ/ネガ/rating/dataset）を自動抽出できます。</li>
           </ul>
         </div>
 
@@ -71,6 +100,8 @@
             <li><strong>ver 0.3:</strong> カテゴリ強化、1.0.0データ移行実装</li>
             <li><strong>ver 0.4:</strong> Danbooru 人気順からのタグ検索・自動翻訳サジェスト機能を追加</li>
             <li><strong>ver 0.5:</strong> AIインポート機能・スマホ対応</li>
+            <li><strong>ver 2.0:</strong> <strong>Anima 対応</strong>。ComfyUI 記法 <code>(tag:1.2)</code>・6 セクション構成・
+              レーティング / データセットタグ・自由記述欄・ComfyUI 製 PNG メタデータ取り込みに対応。</li>
           </ul>
         </div>
       </div>

@@ -1,12 +1,6 @@
-import type { AppState, PromptPart, Category } from '../types'
-import { isRandomizerPartId, RANDOMIZER_PREFIX } from '../types'
+import type { AppState } from '../types'
+import { migrateV1ToV2, isV1Version, type V1AppState } from '../data/migrations/v2_0_0'
 import { defaultData } from '../data/defaultData'
-import {
-    v1_0_0_defaultData,
-    V1_0_0_OFFICIAL_CATEGORY_IDS,
-    CATEGORY_MIGRATION_MAP,
-    PART_ID_MIGRATION_MAP,
-} from '../data/migrations/v1_0_0'
 
 /** iOS Safari かどうかを判定する */
 function isIOSSafari(): boolean {
@@ -46,121 +40,36 @@ export function exportToJSON(state: AppState): { isIOS: boolean } {
 }
 
 // ============================================================
-//  V1.0.0 → V1.0.1 マイグレーション
+//  バリデーション
 // ============================================================
 
-/**
- * V1.0.0 のデフォルトパーツと「完全一致」するかどうかを判定する。
- * 完全一致 = ユーザーが手を加えていない公式パーツ → 移行時に捨ててよい。
- */
-function isDefaultV1Part(part: PromptPart): boolean {
-    // V1.0.1 への引き継ぎ先（マイグレーション先）が存在しない旧デフォルトパーツは、
-    // 切り捨てずに「カスタムパーツ」として旧名と数値をそのまま維持し救済する
-    if (PART_ID_MIGRATION_MAP[part.id] === '') {
-        return false
-    }
-
-    return v1_0_0_defaultData.library.some(
-        (def) =>
-            def.id === part.id &&
-            def.label === part.label &&
-            def.values.novelai === part.values.novelai
+function isValidV1Shape(data: unknown): data is V1AppState {
+    if (!data || typeof data !== 'object') return false
+    const d = data as Record<string, unknown>
+    return (
+        typeof d.version === 'string' &&
+        Array.isArray(d.categories) &&
+        Array.isArray(d.library) &&
+        Array.isArray(d.slots)
     )
 }
 
-/**
- * V1.0.0 データを V1.0.1 形式にマイグレーションする。
- *
- * 処理の流れ:
- * 1. ユーザー独自のカテゴリ（公式10種以外）をそのまま保持
- * 2. ライブラリから「公式デフォルトと完全一致するパーツ」を除外し、
- *    残ったカスタムパーツの categoryId を新カテゴリIDに変換
- * 3. スロット内の partId を新IDに変換（ランダマイザも含む）
- * 4. V1.0.1 のデフォルトデータにカスタムデータをマージして返却
- */
-function migrateV1_0_0_to_V1_0_1(data: AppState): AppState {
-    // --- 1. ユーザー独自カテゴリの抽出 ---
-    const userCustomCategories: Category[] = data.categories.filter(
-        (cat) => !V1_0_0_OFFICIAL_CATEGORY_IDS.has(cat.id)
+function isValidV2Shape(data: unknown): data is AppState {
+    if (!data || typeof data !== 'object') return false
+    const d = data as Record<string, unknown>
+    return (
+        typeof d.version === 'string' &&
+        Array.isArray(d.categories) &&
+        Array.isArray(d.library) &&
+        !!d.positive &&
+        !!d.negative
     )
-
-    // --- 2. カスタムパーツの抽出と categoryId 変換 ---
-    const customParts: PromptPart[] = data.library
-        .filter((part) => !isDefaultV1Part(part))
-        .map((part) => {
-            // 古い公式カテゴリに属している場合 → 新カテゴリIDに変換
-            if (V1_0_0_OFFICIAL_CATEGORY_IDS.has(part.categoryId)) {
-                return {
-                    ...part,
-                    values: { ...part.values },
-                    categoryId:
-                        CATEGORY_MIGRATION_MAP[part.categoryId] || 'mc_unclassified',
-                }
-            }
-            // ユーザー独自カテゴリに属している場合 → そのまま保持
-            return { ...part, values: { ...part.values } }
-        })
-
-    // --- 3. スロット内の partId を変換 ---
-    const migratedSlots = data.slots.map((slot) => ({
-        ...slot,
-        parts: slot.parts.map((sp) => {
-            let newPartId = sp.partId
-
-            if (isRandomizerPartId(sp.partId)) {
-                // ランダマイザ: "randomizer__cat_xxx" → "randomizer__mc_xxx"
-                const oldCatId = sp.partId.slice(RANDOMIZER_PREFIX.length)
-                if (V1_0_0_OFFICIAL_CATEGORY_IDS.has(oldCatId)) {
-                    const newCatId =
-                        CATEGORY_MIGRATION_MAP[oldCatId] || 'mc_unclassified'
-                    newPartId = `${RANDOMIZER_PREFIX}${newCatId}`
-                }
-                // ユーザー独自カテゴリのランダマイザ → そのまま
-            } else if (PART_ID_MIGRATION_MAP[sp.partId] !== undefined) {
-                // 通常パーツの書き換え
-                const mapped = PART_ID_MIGRATION_MAP[sp.partId]
-                if (mapped === '') {
-                    // V1.0.1 に対応なし → カスタムパーツとして残す可能性があるか確認
-                    // カスタムパーツに同一IDがあればそのまま維持、なければ参照切れ（そのまま保持）
-                    newPartId = sp.partId
-                } else {
-                    newPartId = mapped
-                }
-            }
-            // ユーザー独自パーツの partId → そのまま
-
-            return { ...sp, partId: newPartId }
-        }),
-    }))
-
-    // --- 4. V1.0.1 デフォルトデータとマージ ---
-    // カテゴリ: V1.0.1のマスターカテゴリ + ユーザー独自カテゴリ
-    const mergedCategories = [
-        ...defaultData.categories.map((c) => ({ ...c })),
-        ...userCustomCategories,
-    ]
-
-    // ライブラリ: V1.0.1のデフォルトパーツ + カスタムパーツ（同一IDなら上書き）
-    const defaultLibraryMap = new Map(
-        defaultData.library.map((p) => [p.id, { ...p, values: { ...p.values } }])
-    )
-    for (const cp of customParts) {
-        defaultLibraryMap.set(cp.id, cp) // 同一IDのデフォルトパーツをカスタムで上書き
-    }
-    const mergedLibrary = Array.from(defaultLibraryMap.values())
-
-    return {
-        version: defaultData.version,
-        categories: mergedCategories,
-        library: mergedLibrary,
-        slots: migratedSlots,
-    }
 }
 
 /**
  * ファイルを読み込み AppState としてパースして返す
  * バリデーションエラー時は例外を投げる
- * V1.0.0 のデータが読み込まれた場合は自動的に V1.0.1 にマイグレーションする
+ * 旧形式 (V1.x) を検出した場合は自動的に V2.0.0 にマイグレーションする
  */
 export function importFromJSON(file: File): Promise<AppState> {
     return new Promise((resolve, reject) => {
@@ -168,21 +77,34 @@ export function importFromJSON(file: File): Promise<AppState> {
         reader.onload = (e) => {
             try {
                 const text = e.target?.result as string
-                const data = JSON.parse(text) as AppState
-                // 最低限のキー存在チェック
-                if (!data.version || !Array.isArray(data.categories) || !Array.isArray(data.library) || !Array.isArray(data.slots)) {
-                    reject(new Error('無効な JSON フォーマットです。必要なキー (version, categories, library, slots) が不足しています。'))
-                    return
-                }
+                const data = JSON.parse(text) as unknown
 
-                // V1.0.0 → V1.0.1 マイグレーション
-                if (data.version === '1.0.0') {
-                    const migrated = migrateV1_0_0_to_V1_0_1(data)
+                // 旧形式 (V1.x) → マイグレーション
+                if (isValidV1Shape(data) && isV1Version(data.version)) {
+                    const migrated = migrateV1ToV2(data)
                     resolve(migrated)
                     return
                 }
 
-                resolve(data)
+                // V2 形式 → そのまま検証して返す
+                if (isValidV2Shape(data)) {
+                    // version が `2.x` 系でない場合は警告したいが、破壊はしない
+                    const merged: AppState = {
+                        version: data.version || defaultData.version,
+                        categories: data.categories,
+                        library: data.library,
+                        positive: data.positive,
+                        negative: data.negative,
+                    }
+                    resolve(merged)
+                    return
+                }
+
+                reject(
+                    new Error(
+                        '無効な JSON フォーマットです。必要なキーが不足しています。',
+                    ),
+                )
             } catch {
                 reject(new Error('JSON の解析に失敗しました。ファイルを確認してください。'))
             }

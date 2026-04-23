@@ -13,7 +13,7 @@
 
       <div class="modal-body">
         <p class="intro-text">
-          対話型AI（Claude, ChatGPT, Gemini等）を活用して、<br>NovelAI用のタグ構成を一括取り込みします。
+          対話型AI（Claude, ChatGPT, Gemini等）を活用して、<br>Anima 用のタグ構成を一括取り込みします。
         </p>
 
         <section class="step-card">
@@ -147,17 +147,23 @@ function handleImport() {
 
   try {
     const data = parseAIImportText(importText.value)
-    
-    // v4のルール仕様に従い、既存カテゴリが存在すれば常にマージ（'merge'）として扱う
-    const { newCategories, newParts, newSlots } = mergeAIImport(
+
+    // 既存カテゴリ名と重複する場合は常にマージ扱い
+    const result = mergeAIImport(
       data,
       store.categories,
       store.library,
       (_catName) => 'merge'
     )
-    
-    store.mergeAIImportResult(newCategories, newParts, newSlots)
-    emit('imported', `AIインポート完了: カテゴリ ${newCategories.length}個, パーツ ${newParts.length}個, スロット ${newSlots.length}個 追加`)
+
+    store.mergeAIImportResult(result)
+
+    const posCount = Object.values(result.positive).reduce((n, arr) => n + arr.length, 0)
+    const negCount = Object.values(result.negative).reduce((n, arr) => n + arr.length, 0)
+    emit(
+      'imported',
+      `AIインポート完了: カテゴリ ${result.newCategories.length}個 / パーツ ${result.newParts.length}個 / ポジ配置 ${posCount}件 / ネガ配置 ${negCount}件`
+    )
     emit('close')
   } catch (err: any) {
     errorMsg.value = err.message || String(err)

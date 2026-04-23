@@ -12,14 +12,11 @@
         <!-- スロットに追加 -->
         <label class="field-label">スロットに追加</label>
         <div class="add-to-slot-group">
-          <select class="field-input add-to-slot-select" v-model="targetSlotId">
-            <option value="" disabled>追加先スロットを選択...</option>
-            <option v-for="slot in store.slots" :key="slot.id" :value="slot.id">
-              {{ slot.name }}
-            </option>
-          </select>
-          <button class="btn-primary" :disabled="!targetSlotId" @click="addToSlot">
-            追加
+          <button class="btn-primary" @click="addToSlot('positive')">
+            ポジティブへ
+          </button>
+          <button class="btn-primary btn-primary--neg" @click="addToSlot('negative')">
+            ネガティブへ
           </button>
         </div>
 
@@ -35,9 +32,9 @@
         />
         <p class="field-hint">アプリ内で表示される名前</p>
 
-        <label class="field-label mt">NovelAI タグ</label>
+        <label class="field-label mt">Anima タグ</label>
         <AutocompleteInput
-          v-model="editNovelai"
+          v-model="editAnima"
           placeholder="例: blonde hair, long hair"
           :search-fn="suggestByTag"
           @select="onSuggestTagSelect"
@@ -99,7 +96,7 @@ const store = usePromptStore()
 const masterPart = computed(() => store.getMasterPart(props.partId) as PromptPart | undefined)
 
 const editLabel = ref('')
-const editNovelai = ref('')
+const editAnima = ref('')
 const editCategoryId = ref('')
 
 const modalRef = ref<HTMLElement | null>(null)
@@ -131,7 +128,7 @@ watch(
   (p) => {
     if (p) {
       editLabel.value = p.label
-      editNovelai.value = p.values.novelai
+      editAnima.value = p.values.anima
       editCategoryId.value = p.categoryId
     }
   },
@@ -144,7 +141,7 @@ function saveMaster(): void {
     label: editLabel.value,
     categoryId: editCategoryId.value,
     values: {
-      novelai: editNovelai.value,
+      anima: editAnima.value,
     },
   })
 }
@@ -155,15 +152,13 @@ function onSuggestLabelSelect(entry: DictEntry): void {
 }
 
 function onSuggestTagSelect(entry: DictEntry): void {
-  editNovelai.value = entry.tag
+  editAnima.value = entry.tag
   saveMaster()
 }
 
-const targetSlotId = ref('')
-
-function addToSlot(): void {
-  if (!masterPart.value || !targetSlotId.value) return
-  store.addPartToSlot(targetSlotId.value, masterPart.value.id)
+function addToSlot(kind: 'positive' | 'negative'): void {
+  if (!masterPart.value) return
+  store.addPartToSlot(kind, masterPart.value.id)
   emit('added-to-slot')
   emit('close')
 }
@@ -353,6 +348,10 @@ function doDelete(): void {
   gap: 8px;
 }
 
+.add-to-slot-group > .btn-primary {
+  flex: 1;
+}
+
 .add-to-slot-select {
   flex: 1;
 }
@@ -374,6 +373,14 @@ function doDelete(): void {
 
 .btn-primary:hover:not(:disabled) {
   background: #4338ca;
+}
+
+.btn-primary--neg {
+  background: #be185d;
+}
+
+.btn-primary--neg:hover:not(:disabled) {
+  background: #9d174d;
 }
 
 .btn-primary:disabled {

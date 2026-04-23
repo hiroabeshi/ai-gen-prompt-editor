@@ -60,7 +60,7 @@
                 <template v-else>
                   <span class="add-icon">+</span>
                   <span class="library-part__label">{{ element.label }}</span>
-                  <span class="library-part__tag">{{ element.values.novelai }}</span>
+                  <span class="library-part__tag">{{ element.values.anima }}</span>
                 </template>
               </div>
 
@@ -86,10 +86,13 @@
 import { ref, computed, watch } from 'vue'
 import { usePromptStore } from '../store/promptStore'
 import type { PromptPart } from '../types'
+import type { SectionId } from '../data/sections'
 import { randomizerPartId, isRandomizerPartId } from '../types'
 
 const props = defineProps<{
-  slotId: string
+  slotKind: 'positive' | 'negative'
+  /** 明示的に追加先 section を指定したい場合。省略時は categoryId から自動解決。 */
+  sectionId?: SectionId
 }>()
 
 const emit = defineEmits<{
@@ -114,7 +117,7 @@ watch(
         const lower = searchVal.toLowerCase()
         next[cat.id] = parts.filter((p: PromptPart) =>
           p.label.toLowerCase().includes(lower) ||
-          p.values.novelai.toLowerCase().includes(lower)
+          p.values.anima.toLowerCase().includes(lower)
         )
       }
     }
@@ -141,7 +144,7 @@ function getPartsWithRandomizer(categoryId: string): PromptPart[] {
     id: randomizerPartId(categoryId),
     categoryId,
     label: `${cat.name} @ランダマイザ`,
-    values: { novelai: '' },
+    values: { anima: '' },
   }
   return [randPart, ...getPartsForCategory(categoryId)]
 }
@@ -176,7 +179,7 @@ watch(search, (newVal) => {
 })
 
 function addPart(partId: string) {
-  store.addPartToSlot(props.slotId, partId)
+  store.addPartToSlot(props.slotKind, partId, props.sectionId)
   emit('added')
   emit('close')
 }

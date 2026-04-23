@@ -108,7 +108,7 @@
                   </svg>
                 </div>
                 <span class="library-part__label">{{ element.label }}</span>
-                <span class="library-part__tag">{{ element.values.novelai }}</span>
+                <span class="library-part__tag">{{ element.values.anima }}</span>
               </template>
             </div>
           </VueDraggable>
@@ -176,7 +176,7 @@ watch(
         const lower = searchVal.toLowerCase()
         next[cat.id] = parts.filter((p: PromptPart) =>
           p.label.toLowerCase().includes(lower) ||
-          p.values.novelai.toLowerCase().includes(lower)
+          p.values.anima.toLowerCase().includes(lower)
         )
       }
     }
@@ -214,7 +214,7 @@ function getPartsWithRandomizer(categoryId: string): PromptPart[] {
     id: randomizerPartId(categoryId),
     categoryId,
     label: `${cat.name} @ランダマイザ`,
-    values: { novelai: '' },
+    values: { anima: '' },
   }
   return [randPart, ...getPartsForCategory(categoryId)]
 }

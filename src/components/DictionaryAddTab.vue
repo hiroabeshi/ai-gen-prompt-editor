@@ -107,9 +107,9 @@
           />
         </div>
         <div class="dict-form__field">
-          <label class="field-label">NovelAI タグ <span class="required">*</span></label>
+          <label class="field-label">Anima タグ <span class="required">*</span></label>
           <AutocompleteInput
-            v-model="form.novelai"
+            v-model="form.anima"
             placeholder="英語タグで検索..."
             :search-fn="suggestByTag"
             @select="onSuggestSelect"
@@ -133,6 +133,7 @@ import { usePromptStore } from '../store/promptStore'
 import {
   dictCategories,
   getTagsByCategory,
+  normalizeTagForAnima,
   suggestByLabel,
   suggestByTag,
   type DictEntry,
@@ -188,7 +189,7 @@ function toggleCategories() {
 const form = reactive({
   categoryId: props.initialCategoryId || (store.categories[0]?.id ?? ''),
   label: '',
-  novelai: '',
+  anima: '',
 })
 
 // 初期カテゴリからタグ一覧を展開
@@ -252,7 +253,8 @@ function onSuggestSelect(entry: DictEntry): void {
 
 function applyEntry(entry: DictEntry): void {
   form.label = entry.label
-  form.novelai = entry.tag
+  // アンダースコア除去と `()[]:` エスケープをまとめて適用する。
+  form.anima = normalizeTagForAnima(entry.tag)
 
   // 辞書カテゴリとアプリカテゴリの名前一致チェック
   const dictCatName = dictCategories[entry.categoryIndex]
@@ -266,9 +268,9 @@ function applyEntry(entry: DictEntry): void {
 function submit(): void {
   if (!form.categoryId) { error.value = 'カテゴリを選択してください。'; return }
   if (!form.label.trim()) { error.value = 'ラベル名を入力してください。'; return }
-  if (!form.novelai.trim()) { error.value = 'NovelAI タグを入力してください。'; return }
+  if (!form.anima.trim()) { error.value = 'Anima タグを入力してください。'; return }
   error.value = ''
-  store.addPart(form.categoryId, form.label.trim(), form.novelai.trim())
+  store.addPart(form.categoryId, form.label.trim(), form.anima.trim())
   emit('added')
   emit('close')
 }

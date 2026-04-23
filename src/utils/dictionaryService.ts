@@ -8,7 +8,7 @@ import dictionaryRaw from '../data/json/dictionary.json'
 
 /** 辞書エントリ1件 */
 export type DictEntry = {
-    tag: string         // 英語タグ (= NovelAI タグ)
+    tag: string         // 英語タグ (= Anima タグ)
     label: string       // 日本語ラベル
     categoryIndex: number // categories 配列のインデックス
 }
@@ -55,6 +55,23 @@ const allEntries: DictEntry[] = []
             arr.push(entry)
         }
     })()
+
+// ─── タグ正規化 ────────────────────────────────────────────
+
+/**
+ * Danbooru 形式のタグを Anima プロンプト用に正規化する。
+ * - アンダースコアはスペースに置換
+ * - 重み付け / ネスト構文の予約記号 `(`, `)`, `[`, `]`, `:` はバックスラッシュでエスケープ
+ *   （例: `ibuki_(blue_archive)` → `ibuki \(blue archive\)`）
+ */
+export function normalizeTagForAnima(tag: string): string {
+    // 既にエスケープ済みの `\(` などがあれば一旦外し、全対象を改めてエスケープすることで
+    // 二重エスケープを防ぐ。
+    const unescaped = tag.replace(/\\([()[\]:])/g, '$1')
+    return unescaped
+        .replace(/_/g, ' ')
+        .replace(/[()[\]:]/g, '\\$&')
+}
 
 // ─── カテゴリ別タグ取得 (ページネーション) ─────────────────
 

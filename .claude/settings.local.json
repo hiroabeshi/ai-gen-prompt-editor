@@ -4,7 +4,13 @@
       "Bash(xargs ls *)",
       "WebSearch",
       "WebFetch(domain:civitai.com)",
-      "WebFetch(domain:www.comfy.org)"
+      "WebFetch(domain:www.comfy.org)",
+      "Bash(npx vue-tsc *)",
+      "Bash(echo \"exit:$?\")",
+      "Bash(echo \"EXIT=$?\")",
+      "Bash(npm run *)",
+      "Bash(cat)",
+      "Read(//tmp/**)"
     ]
   }
 }

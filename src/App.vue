@@ -6,7 +6,7 @@
         <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" style="color:#6366f1">
           <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
         </svg>
-        <span class="app-header__title">NovelAI プロンプト管理</span>
+        <span class="app-header__title">Anima プロンプト管理</span>
       </div>
 
       <nav class="app-header__nav">
@@ -15,44 +15,33 @@
           <span class="hide-on-mobile">使い方</span>
         </button>
 
-        <a
-          href="https://novelai.net/image"
-          target="_blank"
-          rel="noopener"
-          class="header-link hide-on-mobile"
-        >
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M19 19H5V5h7V3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z"/></svg>
-          NovelAI を開く
-        </a>
-
         <button class="header-btn hide-on-mobile" title="AIからプロンプト構成を取り込む" @click="showAIImport = true">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M9.4 16.6L4.8 12l4.6-4.6L8 6l-6 6 6 6 1.4-1.4zm5.2 0l4.6-4.6-4.6-4.6L16 6l6 6-6 6-1.4-1.4z"/></svg>
           AIインポート
         </button>
 
-        <!-- ＋モバイル用ドロップダウン -->
+        <button class="header-btn hide-on-mobile" title="ComfyUI で生成した PNG 画像から取り込む" @click="showPNGImport = true">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg>
+          PNG取込
+        </button>
+
+        <!-- モバイル用ドロップダウン -->
         <div class="mobile-menu-container" v-if="isMobile">
           <button class="header-btn" title="その他" @click="showMobileMenu = !showMobileMenu">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
               <path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/>
             </svg>
           </button>
-          
+
           <div v-if="showMobileMenu" class="mobile-dropdown-overlay" @click="showMobileMenu = false"></div>
           <div v-if="showMobileMenu" class="mobile-dropdown">
-            <a
-              href="https://novelai.net/image"
-              target="_blank"
-              rel="noopener"
-              class="mobile-dropdown-item"
-              @click="showMobileMenu = false"
-            >
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" style="margin-right:6px"><path d="M19 19H5V5h7V3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z"/></svg>
-              NovelAI を開く
-            </a>
             <button class="mobile-dropdown-item" @click="showAIImport = true; showMobileMenu = false">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="margin-right:6px"><path d="M9.4 16.6L4.8 12l4.6-4.6L8 6l-6 6 6 6 1.4-1.4zm5.2 0l4.6-4.6-4.6-4.6L16 6l6 6-6 6-1.4-1.4z"/></svg>
               AIインポート
+            </button>
+            <button class="mobile-dropdown-item" @click="showPNGImport = true; showMobileMenu = false">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="margin-right:6px"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg>
+              PNG取込
             </button>
           </div>
         </div>
@@ -82,43 +71,39 @@
         @select-category="onSelectCategory"
       />
 
-      <!-- センター: スロット一覧 (縦スクロール) -->
+      <!-- センター: ポジティブ / ネガティブ 2枚 (縦スクロール) -->
       <main v-show="!isMobile || mobileTab === 'slots'" class="main-area">
-        <div class="slots-container">
+        <div class="slots-container" :key="store.loadCount">
           <PromptSlot
-            v-for="slot in store.slots"
-            :key="slot.id + '_' + store.loadCount"
-            :slot="slot"
-            :selected-instance-id="selectedInstanceId"
-            @delete="store.deleteSlot(slot.id)"
-            @duplicate="store.duplicateSlot(slot.id)"
-            @select-part="onSelectSlotPart"
-            @edit-slot="onEditSlot"
-            @copied="showToast('プロンプトをコピーしました！')"
+            kind="positive"
+            :selected-instance-id="selectedKind === 'positive' ? selectedInstanceId : null"
+            @select-part="(instanceId, e) => onSelectSlotPart('positive', instanceId, e)"
+            @copied="showToast('ポジティブプロンプトをコピーしました！')"
             @open-add-part="openAddPartToSlotModal"
           />
-
-          <!-- スロット追加ボタン -->
-          <button class="add-slot-btn" @click="showAddSlot = true">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
-            新しいスロットを追加
-          </button>
+          <PromptSlot
+            kind="negative"
+            :selected-instance-id="selectedKind === 'negative' ? selectedInstanceId : null"
+            @select-part="(instanceId, e) => onSelectSlotPart('negative', instanceId, e)"
+            @copied="showToast('ネガティブプロンプトをコピーしました！')"
+            @open-add-part="openAddPartToSlotModal"
+          />
         </div>
       </main>
     </div>
 
     <!-- モバイル用タブバー -->
     <nav v-if="isMobile" class="mobile-nav">
-      <button 
-        class="mobile-nav-btn" 
+      <button
+        class="mobile-nav-btn"
         :class="{ 'mobile-nav-btn--active': mobileTab === 'warehouse' }"
         @click="mobileTab = 'warehouse'"
       >
         <span class="mobile-nav-icon">📦</span>
         倉庫
       </button>
-      <button 
-        class="mobile-nav-btn" 
+      <button
+        class="mobile-nav-btn"
         :class="{ 'mobile-nav-btn--active': mobileTab === 'slots' }"
         @click="mobileTab = 'slots'"
       >
@@ -134,39 +119,35 @@
       @close="closeAddPartModal"
       @added="() => {}"
     />
-    <AddSlotModal v-if="showAddSlot" @close="showAddSlot = false" @added="() => {}" />
     <AddCategoryModal v-if="showAddCategory" @close="showAddCategory = false" @added="() => {}" />
     <AddPartToSlotModal
-      v-if="showAddPartToSlot"
-      :slot-id="addPartToSlotTargetId!"
-      @close="showAddPartToSlot = false"
+      v-if="showAddPartToSlot && addPartToSlotKind"
+      :slot-kind="addPartToSlotKind"
+      :section-id="addPartToSlotSectionId"
+      @close="closeAddPartToSlotModal"
       @added="showToast('スロットにパーツを追加しました！')"
     />
     <GuideModal v-if="showGuide" @close="showGuide = false" />
     <AIImportModal v-if="showAIImport" @close="showAIImport = false" @imported="onAIImportSuccess" />
+    <PNGImportModal v-if="showPNGImport" @close="showPNGImport = false" @imported="onPNGImportSuccess" />
     <EditCategoryModal v-if="showEditCategory" :category-id="selectedCategoryId!" :x="modalX" :y="modalY" @close="closeEditCategory" @deleted="clearSelection" />
-    <EditMasterPartModal 
-      v-if="showEditMasterPart" 
-      :part-id="selectedMasterPartId!" 
-      :x="modalX" :y="modalY" 
-      @close="closeEditMasterPart" 
-      @deleted="clearSelection" 
-      @added-to-slot="showToast('スロットにパーツを追加しました！')" 
+    <EditMasterPartModal
+      v-if="showEditMasterPart"
+      :part-id="selectedMasterPartId!"
+      :x="modalX" :y="modalY"
+      @close="closeEditMasterPart"
+      @deleted="clearSelection"
+      @added-to-slot="showToast('スロットにパーツを追加しました！')"
     />
     <PartEditor
-      v-if="showPartEditor && editorMode"
-      :mode="editorMode"
-      :instance-part="selectedInstance"
-      :slot-id="selectedSlotId"
-      :slot="selectedSlot"
+      v-if="showPartEditor && selectedKind && selectedInstanceId"
+      :kind="selectedKind"
+      :instance-id="selectedInstanceId"
       :x="modalX"
       :y="modalY"
       @close="clearSelection"
       @remove-from-slot="removeSelectedFromSlot"
-      @deleted="clearSelection"
     />
-
-
 
     <!-- トースト通知 -->
     <Transition name="toast">
@@ -181,21 +162,23 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import { usePromptStore } from './store/promptStore'
 import { exportToJSON, importFromJSON } from './utils/dataIO'
 import CategoryList from './components/CategoryList.vue'
 import PromptSlot from './components/PromptSlot.vue'
 import PartEditor from './components/PartEditor.vue'
 import AddPartModal from './components/AddPartModal.vue'
-import AddSlotModal from './components/AddSlotModal.vue'
 import AddCategoryModal from './components/AddCategoryModal.vue'
 import AddPartToSlotModal from './components/AddPartToSlotModal.vue'
 import GuideModal from './components/GuideModal.vue'
 import EditCategoryModal from './components/EditCategoryModal.vue'
 import EditMasterPartModal from './components/EditMasterPartModal.vue'
 import AIImportModal from './components/AIImportModal.vue'
-import type { SelectedPart } from './types'
+import PNGImportModal from './components/PNGImportModal.vue'
+import type { SectionId } from './data/sections'
+
+type SlotKind = 'positive' | 'negative'
 
 const store = usePromptStore()
 
@@ -220,12 +203,13 @@ onUnmounted(() => {
 
 // ─── モーダル制御 ────────────────────────────────────────────
 const showAddPart = ref(false)
-const showAddSlot = ref(false)
 const showAddCategory = ref(false)
 const showAddPartToSlot = ref(false)
-const addPartToSlotTargetId = ref<string | null>(null)
+const addPartToSlotKind = ref<SlotKind | null>(null)
+const addPartToSlotSectionId = ref<SectionId | undefined>(undefined)
 const showGuide = ref(false)
 const showAIImport = ref(false)
+const showPNGImport = ref(false)
 const addPartCategoryId = ref<string | undefined>(undefined)
 
 function openAddCategoryModal(): void {
@@ -237,9 +221,16 @@ function openAddPartModal(categoryId?: string): void {
   showAddPart.value = true
 }
 
-function openAddPartToSlotModal(slotId: string): void {
-  addPartToSlotTargetId.value = slotId
+function openAddPartToSlotModal(kind: SlotKind, sectionId?: SectionId): void {
+  addPartToSlotKind.value = kind
+  addPartToSlotSectionId.value = sectionId
   showAddPartToSlot.value = true
+}
+
+function closeAddPartToSlotModal(): void {
+  showAddPartToSlot.value = false
+  addPartToSlotKind.value = null
+  addPartToSlotSectionId.value = undefined
 }
 
 function closeAddPartModal(): void {
@@ -253,21 +244,11 @@ const modalX = ref(0)
 const modalY = ref(0)
 
 // ─── パーツ選択・エディタ ─────────────────────────────────────
-type EditorMode = 'slot' | 'slot-info' | null
-
-const editorMode = ref<EditorMode>(null)
 const showPartEditor = ref(false)
 const selectedMasterPartId = ref<string | null>(null)
-const selectedInstance = ref<SelectedPart | null>(null)
-const selectedSlotId = ref<string | null>(null)
+const selectedKind = ref<SlotKind | null>(null)
+const selectedInstanceId = ref<string | null>(null)
 const selectedCategoryId = ref<string | null>(null)
-const selectedInstanceId = computed(() => selectedInstance.value?.id ?? null)
-
-
-
-const selectedSlot = computed(() => {
-  return store.slots.find(s => s.id === selectedSlotId.value) ?? null
-})
 
 function onSelectCategory(categoryId: string, event: MouseEvent): void {
   selectedCategoryId.value = categoryId
@@ -293,16 +274,15 @@ function closeEditMasterPart(): void {
   selectedMasterPartId.value = null
 }
 
-function onSelectSlotPart(slotId: string, instanceId: string, event: MouseEvent): void {
-  const slot = store.slots.find(s => s.id === slotId)
-  const inst = slot?.parts.find(p => p.id === instanceId)
-  if (!inst) return
+function onSelectSlotPart(kind: SlotKind, instanceId: string, event: MouseEvent): void {
+  const found = store.findInstance(kind, instanceId)
+  if (!found) return
 
-  const alreadySelected = selectedInstance.value?.id === instanceId
+  const alreadySelected =
+    selectedKind.value === kind && selectedInstanceId.value === instanceId
 
-  editorMode.value = 'slot'
-  selectedSlotId.value = slotId
-  selectedInstance.value = inst
+  selectedKind.value = kind
+  selectedInstanceId.value = instanceId
   selectedMasterPartId.value = null
   selectedCategoryId.value = null
 
@@ -315,33 +295,20 @@ function onSelectSlotPart(slotId: string, instanceId: string, event: MouseEvent)
     showPartEditor.value = false
   }
 
-  // Target part focus in CategoryList
-  categoryListRef.value?.focusPart(inst.partId)
-}
-
-function onEditSlot(slotId: string, event: MouseEvent): void {
-  editorMode.value = 'slot-info'
-  selectedSlotId.value = slotId
-  selectedInstance.value = null
-  selectedMasterPartId.value = null
-  selectedCategoryId.value = null
-  modalX.value = event.clientX
-  modalY.value = event.clientY
-  showPartEditor.value = true
+  categoryListRef.value?.focusPart(found.part.partId)
 }
 
 function clearSelection(): void {
-  editorMode.value = null
   showPartEditor.value = false
   selectedMasterPartId.value = null
-  selectedInstance.value = null
-  selectedSlotId.value = null
+  selectedKind.value = null
+  selectedInstanceId.value = null
   selectedCategoryId.value = null
 }
 
 function removeSelectedFromSlot(): void {
-  if (!selectedSlotId.value || !selectedInstance.value) return
-  store.removePartFromSlot(selectedSlotId.value, selectedInstance.value.id)
+  if (!selectedKind.value || !selectedInstanceId.value) return
+  store.removePartFromSlot(selectedKind.value, selectedInstanceId.value)
   clearSelection()
 }
 
@@ -354,7 +321,6 @@ function onExport(): void {
     showToast('iOSの場合は、開いた別タブで長押しをして保存してください', 5000)
   }
 }
-
 
 function triggerImport(): void {
   importInput.value?.click()
@@ -382,6 +348,12 @@ async function onImport(e: Event): Promise<void> {
 // ─── AI インポート ────────────────────────────────────────────
 function onAIImportSuccess(msg: string): void {
   showAIImport.value = false
+  showToast(msg, 5000)
+}
+
+// ─── PNG インポート ──────────────────────────────────────────
+function onPNGImportSuccess(msg: string): void {
+  showPNGImport.value = false
   showToast(msg, 5000)
 }
 
@@ -458,23 +430,6 @@ body {
   gap: 6px;
 }
 
-.header-link {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  text-decoration: none;
-  color: #a5b4fc;
-  font-size: 0.78rem;
-  padding: 5px 10px;
-  border-radius: 6px;
-  border: 1px solid #312e81;
-  transition: background 0.15s;
-}
-
-.header-link:hover {
-  background: #1e1b4b;
-}
-
 .header-btn {
   display: flex;
   align-items: center;
@@ -543,132 +498,24 @@ body {
   margin: 0 auto;
 }
 
-.add-slot-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  padding: 14px;
-  background: transparent;
-  border: 1.5px dashed #1f2937;
-  border-radius: 10px;
-  color: #4b5563;
-  font-size: 0.82rem;
-  cursor: pointer;
-  transition: border-color 0.15s, color 0.15s, background 0.15s;
-}
-
-.add-slot-btn:hover {
-  border-color: #6366f1;
-  color: #a5b4fc;
-  background: #111827;
-}
-
-/* ─── 重複確認ダイアログ ─── */
-.modal-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,0.6);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 2000;
-  backdrop-filter: blur(2px);
-}
-
-.confirm-dialog {
-  background: #111827;
-  border: 1px solid #374151;
-  border-radius: 12px;
-  width: 420px;
-  max-width: 95vw;
-  box-shadow: 0 20px 60px rgba(0,0,0,0.5);
-  animation: modal-in 0.15s ease-out;
-}
-
-@keyframes modal-in {
-  from { opacity: 0; transform: scale(0.95); }
-  to   { opacity: 1; transform: scale(1); }
-}
-
-.confirm-dialog__header {
-  font-size: 0.9rem;
-  font-weight: 700;
-  color: #f59e0b;
-  padding: 14px 16px;
-  border-bottom: 1px solid #1f2937;
-}
-
-.confirm-dialog__body {
-  padding: 16px;
-  font-size: 0.85rem;
-  color: #d1d5db;
-  line-height: 1.6;
-}
-
 @media (max-width: 768px) {
   .app-header__title {
-    display: none; /* スマホではタイトルを隠す */
+    display: none;
   }
-  
+
   .hide-on-mobile {
     display: none !important;
   }
-  
+
   .header-btn {
-    padding: 6px 8px;
-    font-size: 0.75rem;
-  }
-  
-  .header-link {
     padding: 6px 8px;
     font-size: 0.75rem;
   }
 
   .slots-container {
-    padding-bottom: 80px; /* タブバーの高さ分 */
+    padding-bottom: 80px;
   }
 }
-
-.sub-text {
-  color: #6b7280;
-  font-size: 0.8rem;
-  margin-top: 8px;
-}
-
-.confirm-dialog__footer {
-  display: flex;
-  gap: 8px;
-  padding: 12px 16px;
-  border-top: 1px solid #1f2937;
-  flex-direction: column;
-}
-
-.btn-primary {
-  background: #4f46e5;
-  color: #fff;
-  border: none;
-  border-radius: 6px;
-  padding: 9px 16px;
-  font-size: 0.82rem;
-  cursor: pointer;
-  transition: background 0.15s;
-}
-
-.btn-primary:hover { background: #4338ca; }
-
-.btn-ghost {
-  background: transparent;
-  border: 1px solid #374151;
-  color: #9ca3af;
-  border-radius: 6px;
-  padding: 9px 16px;
-  font-size: 0.82rem;
-  cursor: pointer;
-  text-align: center;
-}
-
-.btn-ghost:hover { background: #1f2937; }
 
 /* ─── トースト ─── */
 .toast {

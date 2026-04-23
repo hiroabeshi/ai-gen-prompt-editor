@@ -1,14 +1,15 @@
 // ============================================================
-//  型定義 (移植元: _archive_mock/types.ts)
+//  型定義 (Anima 対応版)
 // ============================================================
+
+import type { SectionId } from '../data/sections'
 
 export type PromptPart = {
     id: string;            // マスターID (UUIDv4)
     categoryId: string;    // カテゴリ参照用
     label: string;         // 表示名
     values: {
-        novelai: string;     // NovelAI 用タグ
-        sd?: string;         // Stable Diffusion 用タグ（省略可）
+        anima: string;       // Anima 用タグ (ComfyUI 標準・スペース区切り・小文字)
     };
 }
 
@@ -27,24 +28,33 @@ export type SelectedPart = {
     enabled: boolean;
 }
 
+/** Anima レーティング（排他・positive のみ） */
+export type Rating = 'safe' | 'sensitive' | 'nsfw' | 'explicit'
+
 export type Slot = {
-    id: string;            // スロットID (UUIDv4)
-    name: string;          // スロット名 (例: Base, Char1_Negative)
+    id: string;                                     // スロットID
     type: 'positive' | 'negative';
-    parts: SelectedPart[]; // 格納されたパーツ (順序が重要)
+    sections: Record<SectionId, SelectedPart[]>;    // 固定 6 セクション (ポジ/ネガ共通)
+    freeText: string;                               // 自然言語入力欄 (ポジ/ネガ両方)
+    datasetTag?: string;                            // Anima dataset tag (positive のみ使用)
+    rating?: Rating | null;                         // レーティング (positive のみ使用)
 }
 
 export type AppState = {
-    version: string;
+    version: string;                 // '2.0.0' 以降
     categories: Category[];
     library: PromptPart[];
-    slots: Slot[];
+    positive: Slot;                  // 単一ポジティブ
+    negative: Slot;                  // 単一ネガティブ
 }
 
-// AI インポート用スキーマ型
+// ============================================================
+//  AI インポート用スキーマ型
+// ============================================================
+
 export type AIImportPart = {
     label: string;
-    values: { novelai: string; sd?: string };
+    values: { anima: string };
 }
 
 export type AIImportCategory = {
@@ -52,10 +62,20 @@ export type AIImportCategory = {
     parts: AIImportPart[];
 }
 
+/** AI インポート JSON のスロット表現
+ *  - `section` を直接指定する新形式、または `categoryId` 起点で解決する既存形式の両対応。
+ *  - ここでは最小限、名前だけ持つ軽量な構造とする。
+ */
+export type AIImportSlotPart = AIImportPart & {
+    section?: SectionId
+}
+
 export type AIImportSlot = {
-    name: string;
     type: 'positive' | 'negative';
-    parts: AIImportPart[];
+    parts: AIImportSlotPart[];
+    freeText?: string;
+    datasetTag?: string;
+    rating?: Rating | null;
 }
 
 export type AIImportData = {

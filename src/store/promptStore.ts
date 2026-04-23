@@ -1,67 +1,100 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { v4 as uuidv4 } from 'uuid'
-import type { AppState, Category, PromptPart, SelectedPart, Slot } from '../types'
+import type { AppState, Category, PromptPart, SelectedPart, Slot, Rating } from '../types'
 import { DEFAULT_PART_WEIGHT, isRandomizerPartId, randomizerPartId, categoryIdFromRandomizer } from '../types'
 import { defaultData } from '../data/defaultData'
+import {
+    SECTION_IDS,
+    emptySectionsRecord,
+    resolveSection,
+    type SectionId,
+} from '../data/sections'
+
+type SlotKind = 'positive' | 'negative'
+
+function cloneSlot(s: Slot): Slot {
+    const sections = emptySectionsRecord<SelectedPart>()
+    for (const sid of SECTION_IDS) {
+        sections[sid] = (s.sections[sid] ?? []).map((p) => ({ ...p }))
+    }
+    const base: Slot = {
+        id: s.id,
+        type: s.type,
+        sections,
+        freeText: s.freeText ?? '',
+    }
+    if (s.type === 'positive') {
+        base.datasetTag = s.datasetTag ?? ''
+        base.rating = s.rating ?? null
+    }
+    return base
+}
 
 export const usePromptStore = defineStore('prompt', () => {
     // ─── State ───────────────────────────────────────────────
     const version = ref<string>(defaultData.version)
     const categories = ref<Category[]>([...defaultData.categories])
     const library = ref<PromptPart[]>([...defaultData.library])
-    const slots = ref<Slot[]>(defaultData.slots.map(s => ({
-        ...s,
-        parts: s.parts.map(p => ({ ...p })),
-    })))
+    const positive = ref<Slot>(cloneSlot(defaultData.positive))
+    const negative = ref<Slot>(cloneSlot(defaultData.negative))
     const loadCount = ref<number>(0)
 
     // ─── Getters ─────────────────────────────────────────────
     const getPartsByCategory = computed(() => (categoryId: string) =>
-        library.value.filter(p => p.categoryId === categoryId)
+        library.value.filter((p) => p.categoryId === categoryId),
     )
 
     function getMasterPart(partId: string): PromptPart | undefined {
-        // ランダマイザの場合は仮想的な PromptPart を返す
         if (isRandomizerPartId(partId)) {
             const catId = categoryIdFromRandomizer(partId)
-            const cat = categories.value.find(c => c.id === catId)
+            const cat = categories.value.find((c) => c.id === catId)
             if (!cat) return undefined
             return {
                 id: partId,
                 categoryId: catId,
                 label: `${cat.name} @ランダマイザ`,
-                values: { novelai: '' }, // 実際のタグは generatePrompt 側で動的生成
+                values: { anima: '' },
             }
         }
-        return library.value.find(p => p.id === partId)
+        return library.value.find((p) => p.id === partId)
+    }
+
+    function getSlot(kind: SlotKind): Slot {
+        return kind === 'positive' ? positive.value : negative.value
+    }
+
+    function forEachSlot(cb: (slot: Slot) => void): void {
+        cb(positive.value)
+        cb(negative.value)
     }
 
     function isPartUsedInSlots(partId: string): boolean {
-        return slots.value.some(s => s.parts.some(p => p.partId === partId))
+        for (const slot of [positive.value, negative.value]) {
+            for (const sid of SECTION_IDS) {
+                if (slot.sections[sid].some((p) => p.partId === partId)) return true
+            }
+        }
+        return false
     }
 
     // ─── Actions: State 初期化 ────────────────────────────────
     function initFromData(state: AppState): void {
         version.value = state.version
-        categories.value = state.categories.map(c => ({ ...c }))
-        library.value = state.library.map(p => ({ ...p, values: { ...p.values } }))
-        slots.value = state.slots.map(s => ({
-            ...s,
-            parts: s.parts.map(p => ({ ...p })),
-        }))
+        categories.value = state.categories.map((c) => ({ ...c }))
+        library.value = state.library.map((p) => ({ ...p, values: { ...p.values } }))
+        positive.value = cloneSlot(state.positive)
+        negative.value = cloneSlot(state.negative)
         loadCount.value++
     }
 
     function getFullState(): AppState {
         return {
             version: version.value,
-            categories: categories.value.map(c => ({ ...c })),
-            library: library.value.map(p => ({ ...p, values: { ...p.values } })),
-            slots: slots.value.map(s => ({
-                ...s,
-                parts: s.parts.map(p => ({ ...p })),
-            })),
+            categories: categories.value.map((c) => ({ ...c })),
+            library: library.value.map((p) => ({ ...p, values: { ...p.values } })),
+            positive: cloneSlot(positive.value),
+            negative: cloneSlot(negative.value),
         }
     }
 
@@ -73,20 +106,18 @@ export const usePromptStore = defineStore('prompt', () => {
     }
 
     function updateCategory(id: string, changes: Partial<Omit<Category, 'id'>>): void {
-        const cat = categories.value.find(c => c.id === id)
+        const cat = categories.value.find((c) => c.id === id)
         if (cat) Object.assign(cat, changes)
     }
 
     function deleteCategory(id: string): void {
-        // カテゴリ削除時は library のパーツも削除され、slots からも除去される
-        const partIds = library.value.filter(p => p.categoryId === id).map(p => p.id)
+        const partIds = library.value.filter((p) => p.categoryId === id).map((p) => p.id)
         for (const partId of partIds) {
             removePartFromAllSlots(partId)
         }
-        // ランダマイザインスタンスもスロットから除去
         removePartFromAllSlots(randomizerPartId(id))
-        library.value = library.value.filter(p => p.categoryId !== id)
-        categories.value = categories.value.filter(c => c.id !== id)
+        library.value = library.value.filter((p) => p.categoryId !== id)
+        categories.value = categories.value.filter((c) => c.id !== id)
     }
 
     function reorderCategories(newCategories: Category[]): void {
@@ -97,21 +128,20 @@ export const usePromptStore = defineStore('prompt', () => {
     function addPart(
         categoryId: string,
         label: string,
-        novelai: string,
-        sd?: string,
+        anima: string,
     ): PromptPart {
         const part: PromptPart = {
             id: uuidv4(),
             categoryId,
             label,
-            values: { novelai, ...(sd ? { sd } : {}) },
+            values: { anima },
         }
         library.value.push(part)
         return part
     }
 
     function updatePart(partId: string, changes: Partial<Omit<PromptPart, 'id'>>): void {
-        const part = library.value.find(p => p.id === partId)
+        const part = library.value.find((p) => p.id === partId)
         if (!part) return
         if (changes.label !== undefined) part.label = changes.label
         if (changes.categoryId !== undefined) part.categoryId = changes.categoryId
@@ -126,60 +156,54 @@ export const usePromptStore = defineStore('prompt', () => {
      */
     function deletePart(partId: string): void {
         removePartFromAllSlots(partId)
-        library.value = library.value.filter(p => p.id !== partId)
+        library.value = library.value.filter((p) => p.id !== partId)
     }
 
     function removePartFromAllSlots(partId: string): void {
-        for (const slot of slots.value) {
-            slot.parts = slot.parts.filter(p => p.partId !== partId)
-        }
+        forEachSlot((slot) => {
+            for (const sid of SECTION_IDS) {
+                slot.sections[sid] = slot.sections[sid].filter((p) => p.partId !== partId)
+            }
+        })
     }
 
-    // ─── Actions: スロット ────────────────────────────────────
-    function addSlot(name: string, type: 'positive' | 'negative'): Slot {
-        const slot: Slot = { id: uuidv4(), name, type, parts: [] }
-        slots.value.push(slot)
-        return slot
+    // ─── Actions: スロット (positive / negative 単一) ──────────
+    function setFreeText(kind: SlotKind, text: string): void {
+        getSlot(kind).freeText = text
     }
 
-    function updateSlot(slotId: string, changes: Partial<Omit<Slot, 'id' | 'parts'>>): void {
-        const slot = slots.value.find(s => s.id === slotId)
-        if (slot) Object.assign(slot, changes)
+    function setDatasetTag(tag: string): void {
+        positive.value.datasetTag = tag
     }
 
-    function renameSlot(slotId: string, name: string): void {
-        const slot = slots.value.find(s => s.id === slotId)
-        if (slot) slot.name = name
-    }
-
-    function deleteSlot(slotId: string): void {
-        slots.value = slots.value.filter(s => s.id !== slotId)
-    }
-
-    function duplicateSlot(slotId: string): Slot | undefined {
-        const original = slots.value.find(s => s.id === slotId)
-        if (!original) return undefined
-        const copy: Slot = {
-            id: uuidv4(),
-            name: `${original.name} (コピー)`,
-            type: original.type,
-            parts: original.parts.map(p => ({ ...p, id: uuidv4() })),
-        }
-        const idx = slots.value.findIndex(s => s.id === slotId)
-        slots.value.splice(idx + 1, 0, copy)
-        return copy
+    function setRating(rating: Rating | null): void {
+        positive.value.rating = rating
     }
 
     // ─── Actions: スロット内パーツ ────────────────────────────
-    function addPartToSlot(slotId: string, partId: string, insertIndex?: number): SelectedPart | undefined {
-        const slot = slots.value.find(s => s.id === slotId)
-        if (!slot) return undefined
 
-        // ランダマイザパーツの場合は library に存在しなくてもOK
-        const isRandomizer = isRandomizerPartId(partId)
-        if (!isRandomizer) {
-            const master = library.value.find(p => p.id === partId)
+    /**
+     * 指定 kind のスロットの指定 section にパーツを追加する
+     * - 未指定の sectionId はパーツの categoryId から自動解決
+     */
+    function addPartToSlot(
+        kind: SlotKind,
+        partId: string,
+        sectionId?: SectionId,
+        insertIndex?: number,
+    ): SelectedPart | undefined {
+        const slot = getSlot(kind)
+
+        let resolvedSection: SectionId
+        if (sectionId) {
+            resolvedSection = sectionId
+        } else if (isRandomizerPartId(partId)) {
+            const catId = categoryIdFromRandomizer(partId)
+            resolvedSection = resolveSection(catId)
+        } else {
+            const master = library.value.find((p) => p.id === partId)
             if (!master) return undefined
+            resolvedSection = resolveSection(master.categoryId)
         }
 
         const inst: SelectedPart = {
@@ -188,54 +212,144 @@ export const usePromptStore = defineStore('prompt', () => {
             weight: DEFAULT_PART_WEIGHT,
             enabled: true,
         }
-        if (insertIndex !== undefined && insertIndex >= 0 && insertIndex <= slot.parts.length) {
-            slot.parts.splice(insertIndex, 0, inst)
+        const list = slot.sections[resolvedSection]
+        if (insertIndex !== undefined && insertIndex >= 0 && insertIndex <= list.length) {
+            list.splice(insertIndex, 0, inst)
         } else {
-            slot.parts.push(inst)
+            list.push(inst)
         }
         return inst
     }
 
-    function togglePart(slotId: string, instanceId: string): void {
-        const slot = slots.value.find(s => s.id === slotId)
-        const part = slot?.parts.find(p => p.id === instanceId)
-        if (part) part.enabled = !part.enabled
+    function findInstance(
+        kind: SlotKind,
+        instanceId: string,
+    ): { slot: Slot; sectionId: SectionId; part: SelectedPart } | undefined {
+        const slot = getSlot(kind)
+        for (const sid of SECTION_IDS) {
+            const part = slot.sections[sid].find((p) => p.id === instanceId)
+            if (part) return { slot, sectionId: sid, part }
+        }
+        return undefined
     }
 
-    function setPartWeight(slotId: string, instanceId: string, weight: number): void {
-        const slot = slots.value.find(s => s.id === slotId)
-        const part = slot?.parts.find(p => p.id === instanceId)
-        if (part) part.weight = Math.round(weight * 100) / 100
+    function togglePart(kind: SlotKind, instanceId: string): void {
+        const found = findInstance(kind, instanceId)
+        if (found) found.part.enabled = !found.part.enabled
     }
 
-    function removePartFromSlot(slotId: string, instanceId: string): void {
-        const slot = slots.value.find(s => s.id === slotId)
-        if (slot) slot.parts = slot.parts.filter(p => p.id !== instanceId)
+    function setPartWeight(kind: SlotKind, instanceId: string, weight: number): void {
+        const found = findInstance(kind, instanceId)
+        if (found) found.part.weight = Math.round(weight * 100) / 100
     }
 
-    function reorderSlotParts(slotId: string, newParts: SelectedPart[]): void {
-        const slot = slots.value.find(s => s.id === slotId)
-        if (slot) slot.parts = newParts
+    function removePartFromSlot(kind: SlotKind, instanceId: string): void {
+        const slot = getSlot(kind)
+        for (const sid of SECTION_IDS) {
+            slot.sections[sid] = slot.sections[sid].filter((p) => p.id !== instanceId)
+        }
+    }
+
+    function reorderSectionParts(
+        kind: SlotKind,
+        sectionId: SectionId,
+        newParts: SelectedPart[],
+    ): void {
+        const slot = getSlot(kind)
+        // セクション間ドラッグで他セクションに同一 id のパーツが残らないように除去する。
+        // VueDraggable の update:model-value は source / target 双方で発火するが、
+        // タイミングによってソース側に幽霊パーツが残ることがあるため防御的に同期する。
+        const newIds = new Set(newParts.map((p) => p.id))
+        for (const sid of SECTION_IDS) {
+            if (sid === sectionId) continue
+            const list = slot.sections[sid]
+            if (list.some((p) => newIds.has(p.id))) {
+                slot.sections[sid] = list.filter((p) => !newIds.has(p.id))
+            }
+        }
+        slot.sections[sectionId] = newParts
+    }
+
+    /**
+     * スロット内のセクションを走査し、同一 id のパーツが複数セクションに存在する場合は最初の 1 つだけ残す。
+     * セクション間ドラッグ直後に最終的な整合性を保証するための保険処理。
+     */
+    function dedupeSlotInstances(kind: SlotKind): void {
+        const slot = getSlot(kind)
+        const seen = new Set<string>()
+        for (const sid of SECTION_IDS) {
+            const list = slot.sections[sid]
+            const next: SelectedPart[] = []
+            let changed = false
+            for (const p of list) {
+                if (seen.has(p.id)) {
+                    changed = true
+                    continue
+                }
+                seen.add(p.id)
+                next.push(p)
+            }
+            if (changed) slot.sections[sid] = next
+        }
     }
 
     // ─── Actions: AI インポート ───────────────────────────────
-    function mergeAIImportResult(newCategories: Category[], newParts: PromptPart[], newSlots: Slot[]): void {
-        categories.value.push(...newCategories)
-        library.value.push(...newParts)
-        slots.value.push(...newSlots)
+    /**
+     * AI インポート結果をマージする。
+     * - 新規カテゴリ / パーツは追加
+     * - section 単位で仕分け済みのパーツを各スロットに追加
+     * - freeText は既存値に追記、datasetTag / rating はインポート値がある時のみ上書き
+     */
+    function mergeAIImportResult(payload: {
+        newCategories: Category[]
+        newParts: PromptPart[]
+        positive: Record<SectionId, SelectedPart[]>
+        negative: Record<SectionId, SelectedPart[]>
+        positiveFreeText?: string
+        negativeFreeText?: string
+        datasetTag?: string
+        rating?: Rating | null
+    }): void {
+        categories.value.push(...payload.newCategories)
+        library.value.push(...payload.newParts)
+
+        for (const sid of SECTION_IDS) {
+            positive.value.sections[sid].push(...payload.positive[sid])
+            negative.value.sections[sid].push(...payload.negative[sid])
+        }
+
+        if (payload.positiveFreeText) {
+            positive.value.freeText = positive.value.freeText
+                ? `${positive.value.freeText}\n${payload.positiveFreeText}`
+                : payload.positiveFreeText
+        }
+        if (payload.negativeFreeText) {
+            negative.value.freeText = negative.value.freeText
+                ? `${negative.value.freeText}\n${payload.negativeFreeText}`
+                : payload.negativeFreeText
+        }
+        if (payload.datasetTag) {
+            positive.value.datasetTag = payload.datasetTag
+        }
+        if (payload.rating !== undefined && payload.rating !== null) {
+            positive.value.rating = payload.rating
+        }
     }
 
     return {
-        // state (reaktív refs)
+        // state
         version,
         categories,
         library,
-        slots,
+        positive,
+        negative,
         loadCount,
         // getters
         getPartsByCategory,
         getMasterPart,
+        getSlot,
         isPartUsedInSlots,
+        findInstance,
         // actions
         initFromData,
         getFullState,
@@ -246,16 +360,15 @@ export const usePromptStore = defineStore('prompt', () => {
         addPart,
         updatePart,
         deletePart,
-        addSlot,
-        updateSlot,
-        renameSlot,
-        deleteSlot,
-        duplicateSlot,
+        setFreeText,
+        setDatasetTag,
+        setRating,
         addPartToSlot,
         togglePart,
         setPartWeight,
         removePartFromSlot,
-        reorderSlotParts,
+        reorderSectionParts,
+        dedupeSlotInstances,
         mergeAIImportResult,
     }
 })
